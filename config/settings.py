@@ -89,6 +89,8 @@ class FeatureConfig:
     use_chart_vision: bool = True
     use_blockchain_nlp: bool = True
     use_multilingual_sentiment: bool = True
+    # Phase 6: NLP Sentiment (FinBERT + Twitter-RoBERTa)
+    use_finbert_sentiment: bool = True
     # Market Context Memory (aiagentstore.ai - Jina AI)
     embedding_backend: str = "auto"  # "auto", "jina", "sentence-transformers", "tfidf"
     embedding_model: str = "auto"  # "auto" = seleciona baseado no backend
@@ -300,6 +302,64 @@ class EvolutionaryEnsembleConfig:
     tournament_k: int = 3
 
 
+# ============================================================
+# Phase 5: Time Series Foundation Models
+# ============================================================
+
+@dataclass
+class ChronosConfig:
+    """Amazon Chronos-Bolt: zero-shot/fine-tuned time series forecasting."""
+    model_name: str = "amazon/chronos-bolt-small"
+    context_length: int = 512
+    prediction_length: int = 1
+    num_samples: int = 20
+    batch_size: int = 32
+    fine_tune_epochs: int = 10
+    fine_tune_lr: float = 1e-4
+    device: str = "auto"
+
+
+@dataclass
+class TTMConfig:
+    """IBM Tiny Time Mixers: lightweight MLP-Mixer for time series."""
+    model_name: str = "ibm/TTM"
+    context_length: int = 512
+    prediction_length: int = 1
+    patch_length: int = 64
+    num_input_channels: int = 1
+    fine_tune_epochs: int = 10
+    fine_tune_lr: float = 1e-4
+    batch_size: int = 32
+
+
+@dataclass
+class MOIRAIConfig:
+    """Salesforce MOIRAI: multivariate foundation model."""
+    model_name: str = "salesforce/moirai-1.0-R-small"
+    context_length: int = 512
+    prediction_length: int = 1
+    num_samples: int = 20
+    patch_size: str = "auto"
+    fine_tune_epochs: int = 10
+    fine_tune_lr: float = 1e-4
+    batch_size: int = 32
+
+
+# ============================================================
+# Phase 6: Financial NLP & Sentiment
+# ============================================================
+
+@dataclass
+class NLPSentimentConfig:
+    """Configuracao para features de NLP/sentiment (FinBERT + Twitter-RoBERTa)."""
+    finbert_model: str = "ProsusAI/finbert"
+    twitter_model: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"
+    batch_size: int = 32
+    max_length: int = 128
+    cache_results: bool = True
+    use_proxy_features: bool = True  # Gerar proxies de OHLCV quando NLP indisponivel
+
+
 @dataclass
 class NewsScraperConfig:
     max_articles: int = 50
@@ -369,6 +429,12 @@ class TrainingConfig:
     use_evidential: bool = True
     use_dual_prediction: bool = True
     use_evolutionary_ensemble: bool = True
+    # Phase 5: Foundation Models
+    use_chronos: bool = True
+    use_ttm: bool = True
+    use_moirai: bool = True
+    # Phase 6: NLP Sentiment
+    use_nlp_finbert: bool = True
 
 
 @dataclass
@@ -394,6 +460,12 @@ class Config:
     evidential: EvidentialConfig = field(default_factory=EvidentialConfig)
     dual_prediction: DualPredictionConfig = field(default_factory=DualPredictionConfig)
     evolutionary_ensemble: EvolutionaryEnsembleConfig = field(default_factory=EvolutionaryEnsembleConfig)
+    # Phase 5: Foundation Models
+    chronos: ChronosConfig = field(default_factory=ChronosConfig)
+    ttm: TTMConfig = field(default_factory=TTMConfig)
+    moirai: MOIRAIConfig = field(default_factory=MOIRAIConfig)
+    # Phase 6: NLP Sentiment
+    nlp_sentiment: NLPSentimentConfig = field(default_factory=NLPSentimentConfig)
     # Melhorias (aiagentstore.ai)
     news_scraper: NewsScraperConfig = field(default_factory=NewsScraperConfig)
     signal_generator: SignalGeneratorConfig = field(default_factory=SignalGeneratorConfig)

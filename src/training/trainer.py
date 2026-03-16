@@ -105,6 +105,40 @@ class Trainer:
             logger.warning(f"  {name} falhou: {e}")
             return None
 
+    def _apply_feature_selection(
+        self, X: np.ndarray, y: np.ndarray, feature_columns: list[str],
+    ) -> tuple[np.ndarray, list[str]]:
+        """Aplica selecao de features se configurado."""
+        method = self.config.features.feature_selection_method
+        if method == "none":
+            return X, feature_columns
+
+        FeatureSelector = _safe_import(
+            "src.features.feature_selection", "FeatureSelector"
+        )
+        if FeatureSelector is None:
+            return X, feature_columns
+
+        try:
+            selector = FeatureSelector()
+            selected = selector.select_features(X, y, feature_columns, method=method)
+            if not selected or len(selected) < 5:
+                logger.warning(
+                    f"Feature selection retornou apenas {len(selected or [])} features, "
+                    f"mantendo todas as {len(feature_columns)}"
+                )
+                return X, feature_columns
+            # Filtrar colunas
+            indices = [feature_columns.index(f) for f in selected if f in feature_columns]
+            X_selected = X[:, indices]
+            logger.info(
+                f"Feature selection ({method}): {len(feature_columns)} -> {len(selected)} features"
+            )
+            return X_selected, selected
+        except Exception as e:
+            logger.warning(f"Feature selection falhou: {e}. Usando todas as features.")
+            return X, feature_columns
+
     def train_coin(
         self, coin: str, df_features: pd.DataFrame, feature_columns: list[str]
     ) -> dict:
@@ -115,6 +149,9 @@ class Trainer:
 
         X, y = self._prepare_data(df_features, feature_columns)
         logger.info(f"Dados: {X.shape[0]} amostras, {X.shape[1]} features")
+
+        # Feature selection (antes do treino)
+        X, feature_columns = self._apply_feature_selection(X, y, feature_columns)
 
         splits = self.walk_forward.split_data(X, y)
 
@@ -306,6 +343,43 @@ class Trainer:
                     fold_val_preds["evidential"] = evid_val
                     fold_preds["evidential"] = evid_test
 
+            # --- Foundation Models (Phase 5) ---
+            # Chronos-Bolt (Amazon)
+            chronos = None
+            if self.config.training.use_chronos:
+                result = self._train_optional_model(
+                    "Chronos-Bolt", "src.models.chronos_model", "ChronosModel",
+                    X_train_s, y_train, X_val_s, y_val, X_test_s,
+                )
+                if result:
+                    chronos, chron_val, chron_test = result
+                    fold_val_preds["chronos"] = chron_val
+                    fold_preds["chronos"] = chron_test
+
+            # TTM (IBM)
+            ttm = None
+            if self.config.training.use_ttm:
+                result = self._train_optional_model(
+                    "TTM", "src.models.ttm_model", "TTMModel",
+                    X_train_s, y_train, X_val_s, y_val, X_test_s,
+                )
+                if result:
+                    ttm, ttm_val, ttm_test = result
+                    fold_val_preds["ttm"] = ttm_val
+                    fold_preds["ttm"] = ttm_test
+
+            # MOIRAI (Salesforce)
+            moirai = None
+            if self.config.training.use_moirai:
+                result = self._train_optional_model(
+                    "MOIRAI", "src.models.moirai_model", "MoiraiModel",
+                    X_train_s, y_train, X_val_s, y_val, X_test_s,
+                )
+                if result:
+                    moirai, moirai_val, moirai_test = result
+                    fold_val_preds["moirai"] = moirai_val
+                    fold_preds["moirai"] = moirai_test
+
             # --- Dual Prediction / CryptoPulse (opcional) ---
             dual_pred = None
             if self.config.training.use_dual_prediction:
@@ -412,6 +486,8 @@ class Trainer:
             "cnn_lstm": cnn_lstm, "tcn": tcn, "helformer": helformer,
             "mdn": mdn, "bnn": bnn,
             "mamba": mamba, "evidential": evidential, "dual_pred": dual_pred,
+            "evo_ensemble": evo_ensemble,
+            "chronos": chronos, "ttm": ttm, "moirai": moirai,
         }
         for name, model in optional_models.items():
             if model is not None:
@@ -452,6 +528,107 @@ class Trainer:
             "feature_columns": feature_columns,
         }
 
+    def _train_emgnn(
+        self, features_data: dict[str, pd.DataFrame], feature_columns: list[str],
+    ) -> dict | None:
+        """Treina EMGNN cross-asset se configurado.
+
+        EMGNN opera sobre multiplos ativos simultaneamente, usando grafos de
+        correlacao dinamicos em multiplas escalas temporais.
+
+        Returns:
+            Dict com modelo, metricas e coins, ou None se falhar.
+        """
+        if not self.config.training.use_emgnn:
+            return None
+
+        EMGNNModel = _safe_import("src.models.graph_model", "EMGNNModel")
+        if EMGNNModel is None:
+            return None
+
+        try:
+            coins = sorted(features_data.keys())
+            if len(coins) < 2:
+                logger.info("EMGNN requer >= 2 moedas, pulando")
+                return None
+
+            # Alinhar todas as moedas ao mesmo comprimento
+            min_len = min(len(features_data[c]) for c in coins)
+            if min_len < 50:
+                logger.warning(f"EMGNN: dados insuficientes ({min_len} amostras)")
+                return None
+
+            # Construir tensor 3D: (timesteps, n_nodes, n_features)
+            all_X = []
+            all_y = []
+            for coin in coins:
+                df = features_data[coin].tail(min_len).reset_index(drop=True)
+                X_coin = df[feature_columns].values.astype(np.float32)
+                y_coin = df["target"].values.astype(np.float32)
+                all_X.append(X_coin)
+                all_y.append(y_coin)
+
+            # (timesteps, n_nodes, n_features)
+            X_3d = np.stack(all_X, axis=1)
+            y_2d = np.stack(all_y, axis=1)  # (timesteps, n_nodes)
+
+            # Criar sequencias para 4D: (samples, seq_len, n_nodes, features)
+            lookback = min(20, min_len // 4)
+            n_samples = min_len - lookback
+            if n_samples < 30:
+                logger.warning(f"EMGNN: amostras insuficientes apos sequenciamento ({n_samples})")
+                return None
+
+            X_4d = np.array([X_3d[i:i+lookback] for i in range(n_samples)])
+            y_target = y_2d[lookback:]  # (n_samples, n_nodes)
+
+            # Split train/val/test
+            n_train = int(n_samples * 0.7)
+            n_val = int(n_samples * 0.15)
+
+            X_train = X_4d[:n_train]
+            y_train = y_target[:n_train]
+            X_val = X_4d[n_train:n_train+n_val]
+            y_val = y_target[n_train:n_train+n_val]
+            X_test = X_4d[n_train+n_val:]
+            y_test = y_target[n_train+n_val:]
+
+            logger.info(
+                f"EMGNN: {len(coins)} moedas, {X_4d.shape}, "
+                f"train={len(X_train)}, val={len(X_val)}, test={len(X_test)}"
+            )
+
+            cfg = self.config.emgnn
+            model = EMGNNModel(
+                n_nodes=len(coins),
+                hidden_size=cfg.hidden_size,
+                n_scales=cfg.n_scales,
+                learning_rate=cfg.learning_rate,
+                weight_decay=cfg.weight_decay,
+                batch_size=cfg.batch_size,
+                max_epochs=cfg.max_epochs,
+                early_stop_patience=cfg.early_stop_patience,
+                graph_windows=cfg.scale_windows,
+            )
+            metrics = model.fit(X_train, y_train, X_val, y_val)
+
+            # Avaliar no test set
+            test_preds = model.predict(X_test)
+            dir_acc = float(np.mean(np.sign(test_preds) == np.sign(y_test)))
+            rmse = float(np.sqrt(np.mean((test_preds - y_test) ** 2)))
+            metrics["test_dir_acc"] = dir_acc
+            metrics["test_rmse"] = rmse
+            logger.info(f"EMGNN test: dir_acc={dir_acc:.4f}, rmse={rmse:.6f}")
+
+            return {
+                "model": model,
+                "coins": coins,
+                "metrics": metrics,
+            }
+        except Exception as e:
+            logger.warning(f"EMGNN cross-asset falhou: {e}")
+            return None
+
     def train_all(self, data: dict[str, pd.DataFrame]) -> dict[str, dict]:
         """Treina modelos para todas as moedas."""
         logger.info("Iniciando feature engineering...")
@@ -466,6 +643,15 @@ class Trainer:
             df = df.dropna(subset=["target"])
             results[coin] = self.train_coin(coin, df, feature_columns)
 
+        # EMGNN cross-asset (treina sobre todas as moedas simultaneamente)
+        emgnn_result = self._train_emgnn(features_data, feature_columns)
+        if emgnn_result is not None:
+            # Adicionar modelo EMGNN ao resultado de cada moeda
+            for coin in emgnn_result["coins"]:
+                if coin in results:
+                    results[coin]["models"]["emgnn"] = emgnn_result["model"]
+            results["_emgnn_cross_asset"] = emgnn_result
+
         return results
 
     def save_models(
@@ -475,16 +661,25 @@ class Trainer:
         if base_dir is None:
             base_dir = self.config.training.models_dir
 
+        # Modelos que usam joblib (sklearn/xgboost/lightgbm/ensemble)
+        JOBLIB_MODELS = {
+            "conformal", "ensemble", "xgb_reg", "xgb_cls",
+            "lgbm_reg", "lgbm_cls", "rf_reg", "rf_cls",
+            "svm_reg", "svm_cls", "evo_ensemble",
+        }
+
         for coin, result in results.items():
+            # Resultado especial do EMGNN cross-asset
+            if coin == "_emgnn_cross_asset":
+                emgnn_dir = base_dir / "_emgnn"
+                emgnn_dir.mkdir(parents=True, exist_ok=True)
+                result["model"].save(emgnn_dir / "emgnn.pt")
+                logger.info(f"EMGNN cross-asset salvo em {emgnn_dir}")
+                continue
+
             coin_dir = base_dir / coin
             coin_dir.mkdir(parents=True, exist_ok=True)
 
-            # Modelos que usam joblib (sklearn/xgboost/lightgbm)
-            JOBLIB_MODELS = {
-                "conformal", "ensemble", "xgb_reg", "xgb_cls",
-                "lgbm_reg", "lgbm_cls", "rf_reg", "rf_cls",
-                "svm_reg", "svm_cls",
-            }
             for model_name, model in result["models"].items():
                 if model_name in JOBLIB_MODELS:
                     model.save(coin_dir / f"{model_name}.joblib")

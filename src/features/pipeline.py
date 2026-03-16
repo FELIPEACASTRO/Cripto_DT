@@ -31,7 +31,7 @@ def _safe_import(module_path: str, class_name: str, dep_name: str = ""):
 class FeaturePipeline:
     """Orquestra toda a engenharia de features.
 
-    Pipeline completo (18 etapas):
+    Pipeline completo (27 etapas):
     1. Preprocessamento (clean, returns, target)
     2. Wavelet denoising
     3. Indicadores tecnicos (MACD, RSI, Bollinger, Ichimoku, ADX, etc.)
@@ -55,8 +55,10 @@ class FeaturePipeline:
     21. Chart Vision features (VISTA-inspired candlestick patterns)
     22. Blockchain NLP features (crypto sentiment lexicon)
     23. Multilingual Sentiment (CN, KR, JP, VN, ID, AR)
-    24. Cross-crypto features (retornos cruzados) — chamado externamente
-    25. Limpeza final (dropna)
+    24. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
+    25. Timeframe Fusion (agrega 1h/4h em features diarias)
+    26. Cross-crypto features (retornos cruzados) — chamado externamente
+    27. Limpeza final (dropna) + Feature Selection (no trainer)
     """
 
     # Colunas que NAO sao features (metadata e targets)
@@ -191,6 +193,20 @@ class FeaturePipeline:
             if Cls:
                 self._multilingual_sentiment = Cls()
 
+        # --- Timeframe Fusion (multi-timeframe) ---
+        self._timeframe_fusion = None
+        if config.features.use_multi_timeframe:
+            Cls = _safe_import("src.features.timeframe_fusion", "TimeframeFusion")
+            if Cls:
+                self._timeframe_fusion = Cls(config)
+
+        # --- Phase 6: NLP Sentiment (FinBERT + Twitter-RoBERTa) ---
+        self._finbert_sentiment = None
+        if config.features.use_finbert_sentiment:
+            Cls = _safe_import("src.features.finbert_sentiment", "NLPSentimentFeatures")
+            if Cls:
+                self._finbert_sentiment = Cls()
+
     def _get_fear_greed(self) -> pd.DataFrame:
         """Busca Fear & Greed uma unica vez e cacheia."""
         if self._fg_df is None:
@@ -208,6 +224,8 @@ class FeaturePipeline:
         btc_df: pd.DataFrame | None = None,
         is_btc: bool = False,
         coin: str = "",
+        df_1h: pd.DataFrame | None = None,
+        df_4h: pd.DataFrame | None = None,
     ) -> pd.DataFrame:
         """Aplica pipeline completo de features."""
         logger.info(f"Feature pipeline: {len(df)} linhas de entrada")
@@ -359,7 +377,21 @@ class FeaturePipeline:
             except Exception as e:
                 logger.warning(f"Multilingual sentiment falhou para {coin}: {e}")
 
-        # 24. Limpeza final — estrategia inteligente para preservar dados
+        # 24. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
+        if self._finbert_sentiment is not None:
+            try:
+                df = self._finbert_sentiment.transform(df)
+            except Exception as e:
+                logger.warning(f"FinBERT sentiment falhou: {e}")
+
+        # 25. Timeframe Fusion (agrega 1h/4h em features diarias)
+        if self._timeframe_fusion is not None and (df_1h is not None or df_4h is not None):
+            try:
+                df = self._timeframe_fusion.merge_timeframes(df, df_4h=df_4h, df_1h=df_1h)
+            except Exception as e:
+                logger.warning(f"Timeframe fusion falhou: {e}")
+
+        # 26. Limpeza final — estrategia inteligente para preservar dados
         n_before = len(df)
         feature_cols = self.get_feature_columns(df)
 
