@@ -268,6 +268,18 @@ class RealtimeConfig:
 
 
 @dataclass
+class BacktestConfig:
+    """Parametros de configuracao do backtesting."""
+    initial_capital: float = 100_000.0
+    commission_pct: float = 0.001       # 0.1% por trade
+    slippage_pct: float = 0.0005        # 0.05% slippage estimado
+    max_position_pct: float = 0.10      # 10% do capital por posicao
+    use_stop_loss: bool = True
+    use_take_profit: bool = True
+    risk_free_rate: float = 0.02        # Taxa livre de risco anualizada
+
+
+@dataclass
 class TrainingConfig:
     walk_forward_splits: int = 5
     train_ratio: float = 0.70
@@ -314,6 +326,7 @@ class Config:
     news_scraper: NewsScraperConfig = field(default_factory=NewsScraperConfig)
     signal_generator: SignalGeneratorConfig = field(default_factory=SignalGeneratorConfig)
     realtime: RealtimeConfig = field(default_factory=RealtimeConfig)
+    backtest: BacktestConfig = field(default_factory=BacktestConfig)
 
 
 # Instancia global de configuracao

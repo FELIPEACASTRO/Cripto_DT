@@ -63,52 +63,86 @@
 - [x] 132/132 testes passando
 - **Diretorio**: `src/agents/` (7 arquivos, 1571 linhas)
 
-## Fase 4: Melhorias aiagentstore.ai — Media Prioridade (Futuro)
+## Fase 4: Infraestrutura de Producao (Concluido)
 
-### 4.1 FinRobot Chain-of-Thought (Inspirado: FinRobot)
-- [ ] Padrão Data-CoT -> Concept-CoT -> Thesis-CoT para relatorios
-- [ ] Geracao automatica de teses de investimento
-- [ ] Relatorios explicaveis para cada previsao
-- **GitHub**: https://github.com/AI4Finance-Foundation/FinRobot
+### 4.1 FastAPI REST API ✓
+- [x] 12 endpoints: health, predictions, signals, models, features, sentiment, narratives, agents, portfolio
+- [x] Pydantic v2 schemas para request/response
+- [x] Rate limiting in-memory (60 req/min por IP)
+- [x] CORS middleware, background tasks, cache de predicoes (5min)
+- [x] OpenAPI docs automaticos com tags por grupo
+- **Arquivo**: `src/api/server.py`
 
-### 4.2 AutoML Pipeline (Inspirado: AutoML-Agent)
-- [ ] Selecao automatica de modelos baseada em performance recente
-- [ ] Hyperparameter tuning autonomo por walk-forward window
-- [ ] Multi-modality support (time-series + NLP + graph)
-- **GitHub**: https://github.com/DeepAuto-AI/automl-agent
+### 4.2 Docker + Containerizacao ✓
+- [x] Dockerfile multi-stage (builder + runtime) com Python 3.13-slim
+- [x] docker-compose com 3 servicos: api (8000), dashboard (8501), worker
+- [x] Volumes compartilhados para data/, models/, logs/
+- [x] Health checks, resource limits, restart policies
+- [x] .env.example com todas as variaveis de ambiente
+- **Arquivos**: `Dockerfile`, `docker-compose.yml`, `.dockerignore`, `.env.example`
 
-### 4.3 TradingView Integration (Inspirado: 3Commas, Coinrule)
-- [ ] Receber sinais de TradingView via webhook
-- [ ] Enviar alertas de sinais para TradingView
-- [ ] Templates de estrategia pre-configurados
-- **Impacto**: Ponte entre nossas previsoes e execucao real
+### 4.3 CI/CD GitHub Actions ✓
+- [x] Pipeline CI: lint (ruff), test (pytest), security (bandit)
+- [x] Pipeline de treino agendado (domingos 00:00 UTC + manual dispatch)
+- [x] Cache de dependencias pip
+- **Diretorio**: `.github/workflows/`
+
+### 4.4 pyproject.toml ✓
+- [x] Configuracao moderna com grupos opcionais: [dev], [api], [all]
+- [x] Ruff config (line-length=120, py311)
+- [x] Pytest config (testpaths=tests)
+- [x] Entry point: `cripto-dt` CLI
+- **Arquivo**: `pyproject.toml`
+
+### 4.5 Backtesting Engine ✓
+- [x] Backtester com SL/TP, slippage, comissao, execucao T+1
+- [x] BacktestResult com 15+ metricas (Sharpe, Sortino, Calmar, Omega, drawdown, win rate)
+- [x] BenchmarkComparator: alpha, beta, information ratio vs buy-and-hold
+- [x] Relatorio formatado em portugues
+- **Arquivo**: `src/trading/backtester.py`
+
+### 4.6 AutoML Pipeline (Inspirado: AutoML-Agent) ✓
+- [x] Selecao automatica dos top-K modelos por performance recente
+- [x] Tuning com Optuna (TPE sampler + MedianPruner) com search spaces por modelo
+- [x] Pipeline completo: select top-5 -> tune top-3 -> weighted ensemble
+- **Arquivo**: `src/training/automl.py`
+
+### 4.7 Monitoring + Data Drift ✓
+- [x] PerformanceTracker com log de predicoes em JSON
+- [x] Deteccao de data drift via PSI (Population Stability Index)
+- [x] Deteccao de model drift (degradacao de acuracia direcional)
+- [x] Sistema de alertas com severidade (normal/moderado/severo)
+- [x] Relatorios de performance com sumario 7d/30d
+- **Arquivo**: `src/monitoring/tracker.py`
+
+### 4.8 README + Documentacao ✓
+- [x] README completo com arquitetura, instalacao, uso, estrutura
+- [x] Diagrama ASCII da arquitetura multi-agente
+- [x] Tabelas de modelos, features, tech stack
+- [x] 159/159 testes passando
 
 ## Fase 5: Melhorias Futuras (Backlog)
 
-### 5.1 Causal Reasoning (Inspirado: causaLens AI)
+### 5.1 FinRobot Chain-of-Thought (Inspirado: FinRobot)
+- [ ] Padrao Data-CoT -> Concept-CoT -> Thesis-CoT para relatorios
+- [ ] Geracao automatica de teses de investimento
+- **GitHub**: https://github.com/AI4Finance-Foundation/FinRobot
+
+### 5.2 TradingView Integration (Inspirado: 3Commas)
+- [ ] Receber sinais de TradingView via webhook
+- [ ] Enviar alertas de sinais para TradingView
+
+### 5.3 Causal Reasoning (Inspirado: causaLens AI)
 - [ ] Substituir correlacao por causalidade nas features
 - [ ] Causal discovery automatica entre variaveis
-- [ ] Simulacao de cenarios contrafactuais
 
-### 5.2 Persistent Memory (Inspirado: memU)
-- [ ] Memoria hierarquica (file-based + RAG)
-- [ ] Predicao de intencao do mercado
-- [ ] Reducao de custo de tokens via caching
-
-### 5.3 Vector Database (Inspirado: Pinecone)
+### 5.4 Vector Database (Inspirado: Pinecone)
 - [ ] Migrar market context memory para Pinecone/ChromaDB
 - [ ] Busca semantica em escala com metadata filtering
-- [ ] Real-time indexing de novos eventos
 
-### 5.4 StockAgent Simulation (Inspirado: StockAgent)
+### 5.5 StockAgent Simulation (Inspirado: StockAgent)
 - [ ] Simulacao multi-agente para backtesting comportamental
-- [ ] Testar como diferentes perfis reagiriam as previsoes
 - **GitHub**: https://github.com/MingyuJ666/Stockagent
-
-### 5.5 Mettalex DEX Integration (Inspirado: Mettalex)
-- [ ] Trading descentralizado com AI agents
-- [ ] Cross-chain interoperability
-- [ ] Natural language trading commands
 
 ---
 

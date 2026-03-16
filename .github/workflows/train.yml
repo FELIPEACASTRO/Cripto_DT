@@ -1,0 +1,35 @@
+name: Scheduled Training
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"  # Every Sunday at 00:00 UTC
+  workflow_dispatch:
+
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-train-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-train-
+
+      - name: Install dependencies
+        run: pip install -e ".[all]"
+
+      - name: Run data collection
+        run: python scripts/run_pipeline.py --collect
+
+      - name: Run training
+        run: python scripts/run_pipeline.py --train

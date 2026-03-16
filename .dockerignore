@@ -1,0 +1,51 @@
+# Controle de versao
+.git
+.gitignore
+
+# Cache Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+
+# Ambientes virtuais
+.venv
+venv
+env
+
+# Testes e qualidade
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Variaveis de ambiente (segredos)
+.env
+
+# Dados brutos volumosos (recriados pelo pipeline)
+data/raw/*
+
+# Modelos treinados grandes (recriados pelo worker)
+models/*/*.pt
+models/*/*.pth
+models/*/*.pkl
+
+# Node
+node_modules
+
+# Docker aninhado
+docker-compose.override.yml
+
+# Documentacao e CI (desnecessarios na imagem)
+*.md
+.github
+.claude

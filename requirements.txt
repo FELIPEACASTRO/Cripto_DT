@@ -48,6 +48,10 @@ plotly>=5.15
 # Dashboard
 streamlit>=1.30
 
+# API REST
+fastapi>=0.110
+uvicorn[standard]>=0.27
+
 # News Scraping
 feedparser>=6.0  # RSS feed parsing
 aiohttp>=3.9  # Async HTTP para advanced crawler (opcional)
