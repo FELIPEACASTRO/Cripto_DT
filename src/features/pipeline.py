@@ -48,8 +48,11 @@ class FeaturePipeline:
     14. Macro variables (VIX, DXY, S&P500, etc.)
     15. Whale monitoring (volume anomalies)
     16. NLP sentiment (news analysis)
-    17. Cross-crypto features (retornos cruzados) — chamado externamente
-    18. Limpeza final (dropna)
+    17. Smart Money features (Fase 3 - flow, acumulacao, distribuicao)
+    18. Narrative Detection (Fase 3 - 8 narrativas cripto)
+    19. Advanced Crawler features (Fase 3 - news count, buzz, fear&greed)
+    20. Cross-crypto features (retornos cruzados) — chamado externamente
+    21. Limpeza final (dropna)
     """
 
     # Colunas que NAO sao features (metadata e targets)
@@ -140,6 +143,23 @@ class FeaturePipeline:
             Cls = _safe_import("src.data.nlp_sentiment", "NLPSentimentAnalyzer")
             if Cls:
                 self._nlp_sentiment = Cls()
+
+        # --- Modulos Fase 3 (aiagentstore.ai) ---
+        self._smart_money = None
+        self._narrative_detector = None
+        self._advanced_crawler = None
+
+        Cls = _safe_import("src.data.smart_money", "SmartMoneyTracker")
+        if Cls:
+            self._smart_money = Cls()
+
+        Cls = _safe_import("src.data.narrative_detector", "NarrativeDetector")
+        if Cls:
+            self._narrative_detector = Cls()
+
+        Cls = _safe_import("src.data.advanced_crawler", "AdvancedNewsCrawler")
+        if Cls:
+            self._advanced_crawler = Cls()
 
     def _get_fear_greed(self) -> pd.DataFrame:
         """Busca Fear & Greed uma unica vez e cacheia."""
@@ -260,7 +280,28 @@ class FeaturePipeline:
             except Exception as e:
                 logger.warning(f"NLP sentiment falhou para {coin}: {e}")
 
-        # 17. Limpeza final — remover linhas com NaN (warm-up dos indicadores)
+        # 17. Smart Money features (Fase 3)
+        if self._smart_money is not None and coin:
+            try:
+                df = self._smart_money.add_smart_money_features(df, coin)
+            except Exception as e:
+                logger.warning(f"Smart Money falhou para {coin}: {e}")
+
+        # 18. Narrative Detection features (Fase 3)
+        if self._narrative_detector is not None and coin:
+            try:
+                df = self._narrative_detector.add_narrative_features(df, coin)
+            except Exception as e:
+                logger.warning(f"Narrative detection falhou para {coin}: {e}")
+
+        # 19. Advanced Crawler features (Fase 3)
+        if self._advanced_crawler is not None and coin:
+            try:
+                df = self._advanced_crawler.add_crawler_features(df, coin)
+            except Exception as e:
+                logger.warning(f"Advanced crawler falhou para {coin}: {e}")
+
+        # 20. Limpeza final — remover linhas com NaN (warm-up dos indicadores)
         n_before = len(df)
         df = df.dropna().reset_index(drop=True)
         n_removed = n_before - len(df)

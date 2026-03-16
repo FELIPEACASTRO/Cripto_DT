@@ -57,7 +57,7 @@ class DataAgent(BaseAgent):
                 logger.warning(f"[{self.name}] NewsScraper: ERRO - {e}")
 
         # AdvancedNewsCrawler - crawler avancado de noticias (opcional)
-        Cls = _safe_import("src.data.news_scraper", "AdvancedNewsCrawler")
+        Cls = _safe_import("src.data.advanced_crawler", "AdvancedNewsCrawler")
         if Cls:
             try:
                 self._news_crawler = Cls()

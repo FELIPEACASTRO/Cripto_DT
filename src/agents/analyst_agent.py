@@ -69,7 +69,7 @@ class AnalystAgent(BaseAgent):
                 logger.warning(f"[{self.name}] MarketContextMemory: ERRO - {e}")
 
         # NarrativeDetector - deteccao de narrativas dominantes (opcional)
-        Cls = _safe_import("src.data.news_scraper", "NarrativeDetector")
+        Cls = _safe_import("src.data.narrative_detector", "NarrativeDetector")
         if Cls:
             try:
                 self._narrative_detector = Cls()
@@ -78,7 +78,7 @@ class AnalystAgent(BaseAgent):
                 logger.debug(f"[{self.name}] NarrativeDetector: {e}")
 
         # SmartMoneyTracker - rastreamento de smart money (opcional)
-        Cls = _safe_import("src.data.whale_monitor", "SmartMoneyTracker")
+        Cls = _safe_import("src.data.smart_money", "SmartMoneyTracker")
         if Cls:
             try:
                 self._smart_money_tracker = Cls()

@@ -336,7 +336,7 @@ class Trainer:
         # Conformal Prediction
         conformal = None
         if self.config.training.use_conformal and conformal_residuals:
-            ConformalPredictor = _safe_import_conformal()
+            ConformalPredictor = _safe_import("src.models.conformal", "ConformalPredictor")
             if ConformalPredictor:
                 conformal = ConformalPredictor(alpha=self.config.conformal.alpha)
                 # Calibrar com residuos coletados de todos os folds
