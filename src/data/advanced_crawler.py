@@ -505,7 +505,7 @@ class AdvancedNewsCrawler:
         # Converter artigos para DataFrame auxiliar para agregacao diaria
         news_df = pd.DataFrame(articles)
         news_df["sentiment"] = sentiments
-        news_df["timestamp"] = pd.to_datetime(news_df["timestamp"], utc=True)
+        news_df["timestamp"] = pd.to_datetime(news_df["timestamp"], utc=True).dt.tz_localize(None)
         news_df["_date"] = news_df["timestamp"].dt.normalize()
 
         # Agregar por dia

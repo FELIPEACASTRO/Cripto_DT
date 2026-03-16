@@ -233,7 +233,7 @@ class NarrativeDetector:
             alignment = self._compute_alignment(scores, coin)
 
             daily_narrative_data.append({
-                "_date": pd.Timestamp(date_str, tz="UTC"),
+                "_date": pd.Timestamp(date_str).tz_localize(None),
                 "narrative_dominant_score": dominant_score,
                 "narrative_diversity": diversity,
                 "narrative_momentum_7d": momentum_7d,

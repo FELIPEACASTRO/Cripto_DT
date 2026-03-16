@@ -15,44 +15,53 @@
 - [x] Market context memory com sentence-transformers embeddings
 - [x] Signal generator (Kelly Criterion, ATR-based SL/TP)
 - [x] Real-time pipeline orchestrator com health check
-- [x] 71/71 testes passando
+- [x] 71/71 testes passando (expandido para 132/132 na Fase 3)
 
-## Fase 3: Melhorias aiagentstore.ai — Alta Prioridade (Em Andamento)
+## Fase 3: Melhorias aiagentstore.ai — Alta Prioridade (Concluido)
 
-### 3.1 Jina AI Embeddings (Inspirado: Jina AI)
-- [ ] Substituir all-MiniLM-L6-v2 por jina-embeddings-v3 no MarketContextMemory
-- [ ] Janela de 8192 tokens (vs 512 atual) para contexto financeiro
-- [ ] Multilingual support para noticias em PT-BR e EN
-- **Impacto**: Melhoria direta na qualidade de busca semantica de eventos
+### 3.1 Jina AI Embeddings (Inspirado: Jina AI) ✓
+- [x] Backend auto-detect com prioridade: jina -> sentence-transformers -> tfidf
+- [x] Suporte a jina-embeddings-v3 com janela de 8192 tokens (vs 512 anterior)
+- [x] Multilingual support para noticias em PT-BR e EN
+- [x] Feature `ctx_narrative_similarity` no MarketContextMemory
+- [x] Config: `embedding_backend`, `embedding_model`, `max_context_events`
+- **Arquivo**: `src/data/market_context.py` (atualizado)
 
-### 3.2 Advanced Web Crawler (Inspirado: Crawl4AI)
-- [ ] Crawler async com retry e anti-bloqueio
-- [ ] Suporte a conteudo dinamico (JS rendering)
-- [ ] Output otimizado para pipeline LLM
-- [ ] Mais fontes: CoinDesk, CoinTelegraph, Decrypt, The Block
-- **Impacto**: 5-10x mais dados de noticias com melhor qualidade
+### 3.2 Advanced Web Crawler (Inspirado: Crawl4AI) ✓
+- [x] Crawler async via aiohttp com fallback sincrono (requests)
+- [x] Retry com backoff exponencial e rate limiting por dominio
+- [x] Rotacao de 6 user agents e anti-bloqueio
+- [x] Deduplicacao por MD5 de titulo normalizado
+- [x] 6 fontes: CryptoCompare, CoinGecko, Reddit (4 subs), RSS (CoinDesk, CoinTelegraph, Decrypt, TheBlock)
+- [x] Fear & Greed Index integration
+- [x] 5 features: `crawler_news_count`, `crawler_sentiment_mean`, `crawler_fear_greed`, `crawler_buzz_score`, `crawler_source_diversity`
+- **Arquivo**: `src/data/advanced_crawler.py` (1096 linhas)
 
-### 3.3 Smart Money Tracker (Inspirado: SocialScan, aixbt)
-- [ ] Rastreamento de carteiras de baleias via APIs on-chain
-- [ ] Deteccao de acumulacao/distribuicao por smart money
-- [ ] Score de smart money flow como feature preditiva
-- [ ] Alertas de movimentacao anomala
-- **Impacto**: Indicador antecedente de alta qualidade
+### 3.3 Smart Money Tracker (Inspirado: SocialScan, aixbt) ✓
+- [x] Smart Money Flow (-1 a 1): MFI ponderado por volume institucional
+- [x] Acumulacao (0-1): AD Line z-score + divergencia volume-preco
+- [x] Distribuicao (0-1): OBV-preco divergencia + volume declinante
+- [x] Exchange Flow Ratio (0.1-10): posicao do close dentro do range H-L
+- [x] Whale Concentration (0-1): ratio de volume anomalo (>2σ)
+- [x] Enriquecimento opcional via APIs (Blockchain.com, Etherscan)
+- **Arquivo**: `src/data/smart_money.py` (518 linhas)
 
-### 3.4 Narrative Detection NLP (Inspirado: aixbt by Virtuals)
-- [ ] Detector de narrativas emergentes (DeFi, AI tokens, RWA, memecoins)
-- [ ] Tracking de momentum de narrativas ao longo do tempo
-- [ ] Score de forca de narrativa como feature preditiva
-- [ ] Correlacao narrativa-preco para gerar alpha
-- **Impacto**: Capturar movimentos de mercado antes que virem mainstream
+### 3.4 Narrative Detection NLP (Inspirado: aixbt by Virtuals) ✓
+- [x] 8 categorias de narrativas: DeFi, AI Crypto, RWA, Memecoins, L2 Scaling, Regulation, Institutional, Gaming/NFT
+- [x] Recency weighting com decaimento exponencial (0.85/dia)
+- [x] Coin-to-narrative alignment para 15 moedas
+- [x] 5 features: `narrative_dominant_score`, `narrative_diversity`, `narrative_momentum_7d`, `narrative_alignment`, `narrative_contrarian`
+- **Arquivo**: `src/data/narrative_detector.py` (589 linhas)
 
-### 3.5 Multi-Agent Architecture (Inspirado: SigTech MAGIC, FinRobot)
-- [ ] DataAgent: orquestra coleta de dados (OHLCV, noticias, on-chain)
-- [ ] AnalystAgent: executa analise tecnica e fundamentalista
-- [ ] TraderAgent: gera sinais e gerencia ordens
-- [ ] RiskAgent: monitora exposicao e aplica filtros de risco
-- [ ] Orquestrador central coordenando todos os agentes
-- **Impacto**: Modularidade, testabilidade e escalabilidade
+### 3.5 Multi-Agent Architecture (Inspirado: SigTech MAGIC, FinRobot) ✓
+- [x] BaseAgent: classe abstrata com AgentResult, timing, error handling
+- [x] DataAgent: orquestra coleta (OHLCV + news + whale data)
+- [x] AnalystAgent: preprocessing + feature pipeline + NLP + narrativas + smart money
+- [x] TraderAgent: ML predictions + signal generation + regime filtering
+- [x] RiskAgent: 6 camadas (confidence, position limits, exposure, correlation, volatility, drawdown)
+- [x] AgentOrchestrator: pipeline Data->Analyst->Trader->Risk com contexto acumulativo
+- [x] 132/132 testes passando
+- **Diretorio**: `src/agents/` (7 arquivos, 1571 linhas)
 
 ## Fase 4: Melhorias aiagentstore.ai — Media Prioridade (Futuro)
 
