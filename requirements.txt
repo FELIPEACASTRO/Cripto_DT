@@ -1,0 +1,56 @@
+# Data
+pandas>=2.0
+numpy>=1.24
+pyarrow>=12.0
+ccxt>=4.0
+requests>=2.31
+
+# Feature Engineering
+ta>=0.11.0
+PyWavelets>=1.4
+EMD-signal>=1.5  # CEEMDAN/EEMD/EMD decomposition
+arch>=7.0  # GARCH volatility models
+statsmodels>=0.14  # ADF test, econometrics
+
+# Machine Learning
+scikit-learn>=1.3
+xgboost>=2.0
+lightgbm>=4.0
+hmmlearn>=0.3  # Regime detection (HMM)
+
+# Feature Selection
+boruta>=0.3  # Boruta feature selection
+
+# Deep Learning
+torch>=2.0
+
+# Explainability
+shap>=0.43
+
+# NLP / Sentiment (opcional)
+sentence-transformers>=2.2
+
+# Macro Data
+yfinance>=0.2
+
+# Hyperparameter Tuning
+optuna>=3.0
+
+# Reinforcement Learning
+gymnasium>=0.29
+stable-baselines3>=2.0
+
+# Visualization
+matplotlib>=3.7
+plotly>=5.15
+
+# Dashboard
+streamlit>=1.30
+
+# Utilities
+tqdm>=4.65
+joblib>=1.3
+python-dateutil>=2.8
+
+# Testing
+pytest>=7.0
