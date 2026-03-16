@@ -91,6 +91,10 @@ class FeatureConfig:
     use_multilingual_sentiment: bool = True
     # Phase 6: NLP Sentiment (FinBERT + Twitter-RoBERTa)
     use_finbert_sentiment: bool = True
+    # Phase 8: Chart Pattern Detection
+    use_chart_patterns: bool = True
+    # Phase 10: Regional Intelligence
+    use_regional_intelligence: bool = True
     # Market Context Memory (aiagentstore.ai - Jina AI)
     embedding_backend: str = "auto"  # "auto", "jina", "sentence-transformers", "tfidf"
     embedding_model: str = "auto"  # "auto" = seleciona baseado no backend

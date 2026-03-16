@@ -31,7 +31,7 @@ def _safe_import(module_path: str, class_name: str, dep_name: str = ""):
 class FeaturePipeline:
     """Orquestra toda a engenharia de features.
 
-    Pipeline completo (27 etapas):
+    Pipeline completo (29 etapas):
     1. Preprocessamento (clean, returns, target)
     2. Wavelet denoising
     3. Indicadores tecnicos (MACD, RSI, Bollinger, Ichimoku, ADX, etc.)
@@ -55,10 +55,12 @@ class FeaturePipeline:
     21. Chart Vision features (VISTA-inspired candlestick patterns)
     22. Blockchain NLP features (crypto sentiment lexicon)
     23. Multilingual Sentiment (CN, KR, JP, VN, ID, AR)
-    24. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
-    25. Timeframe Fusion (agrega 1h/4h em features diarias)
-    26. Cross-crypto features (retornos cruzados) — chamado externamente
-    27. Limpeza final (dropna) + Feature Selection (no trainer)
+    24. Chart Pattern Detection (Phase 8 — H&S, triangles, flags, etc.)
+    25. Regional Intelligence (Phase 10 — sessions, premiums, calendar)
+    26. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
+    27. Timeframe Fusion (agrega 1h/4h em features diarias)
+    28. Cross-crypto features (retornos cruzados) — chamado externamente
+    29. Limpeza final (dropna) + Feature Selection (no trainer)
     """
 
     # Colunas que NAO sao features (metadata e targets)
@@ -206,6 +208,20 @@ class FeaturePipeline:
             Cls = _safe_import("src.features.finbert_sentiment", "NLPSentimentFeatures")
             if Cls:
                 self._finbert_sentiment = Cls()
+
+        # --- Phase 8: Chart Pattern Detection ---
+        self._chart_patterns = None
+        if config.features.use_chart_patterns:
+            Cls = _safe_import("src.features.chart_patterns", "ChartPatternDetector")
+            if Cls:
+                self._chart_patterns = Cls()
+
+        # --- Phase 10: Regional Intelligence ---
+        self._regional_intelligence = None
+        if config.features.use_regional_intelligence:
+            Cls = _safe_import("src.features.regional_intelligence", "RegionalIntelligence")
+            if Cls:
+                self._regional_intelligence = Cls()
 
     def _get_fear_greed(self) -> pd.DataFrame:
         """Busca Fear & Greed uma unica vez e cacheia."""
@@ -377,21 +393,35 @@ class FeaturePipeline:
             except Exception as e:
                 logger.warning(f"Multilingual sentiment falhou para {coin}: {e}")
 
-        # 24. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
+        # 24. Chart Pattern Detection (Phase 8 — head&shoulders, triangles, etc.)
+        if self._chart_patterns is not None:
+            try:
+                df = self._chart_patterns.transform(df)
+            except Exception as e:
+                logger.warning(f"Chart patterns falhou: {e}")
+
+        # 25. Regional Intelligence (Phase 10 — session analysis, premiums, calendar)
+        if self._regional_intelligence is not None:
+            try:
+                df = self._regional_intelligence.transform(df)
+            except Exception as e:
+                logger.warning(f"Regional intelligence falhou: {e}")
+
+        # 26. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
         if self._finbert_sentiment is not None:
             try:
                 df = self._finbert_sentiment.transform(df)
             except Exception as e:
                 logger.warning(f"FinBERT sentiment falhou: {e}")
 
-        # 25. Timeframe Fusion (agrega 1h/4h em features diarias)
+        # 27. Timeframe Fusion (agrega 1h/4h em features diarias)
         if self._timeframe_fusion is not None and (df_1h is not None or df_4h is not None):
             try:
                 df = self._timeframe_fusion.merge_timeframes(df, df_4h=df_4h, df_1h=df_1h)
             except Exception as e:
                 logger.warning(f"Timeframe fusion falhou: {e}")
 
-        # 26. Limpeza final — estrategia inteligente para preservar dados
+        # 29. Limpeza final — estrategia inteligente para preservar dados
         n_before = len(df)
         feature_cols = self.get_feature_columns(df)
 
