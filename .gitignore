@@ -1,0 +1,31 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Data
+data/raw/
+data/processed/
+data/predictions/
+
+# Models
+models/*.pt
+models/*.pkl
+models/*.joblib
+
+# Environment
+.env
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
