@@ -235,6 +235,35 @@ class CNNLSTMConfig:
 
 
 @dataclass
+class NewsScraperConfig:
+    max_articles: int = 50
+    cache_hours: int = 1
+    use_cryptocompare: bool = True
+    use_reddit: bool = True
+    use_rss: bool = True
+    rate_limit_sleep: float = 1.0
+
+
+@dataclass
+class SignalGeneratorConfig:
+    risk_per_trade: float = 0.02
+    max_position: float = 0.10
+    min_confidence: float = 0.6
+    min_model_agreement: float = 0.5
+    atr_multiplier_sl: float = 2.0
+    atr_multiplier_tp: float = 3.0
+    max_portfolio_exposure: float = 0.5
+
+
+@dataclass
+class RealtimeConfig:
+    update_interval_minutes: int = 60
+    use_news_scraper: bool = True
+    use_market_context: bool = True
+    use_signal_generator: bool = True
+
+
+@dataclass
 class TrainingConfig:
     walk_forward_splits: int = 5
     train_ratio: float = 0.70
@@ -277,6 +306,10 @@ class Config:
     tcn: TCNConfig = field(default_factory=TCNConfig)
     bnn: BNNConfig = field(default_factory=BNNConfig)
     cnn_lstm: CNNLSTMConfig = field(default_factory=CNNLSTMConfig)
+    # Melhorias (aiagentstore.ai)
+    news_scraper: NewsScraperConfig = field(default_factory=NewsScraperConfig)
+    signal_generator: SignalGeneratorConfig = field(default_factory=SignalGeneratorConfig)
+    realtime: RealtimeConfig = field(default_factory=RealtimeConfig)
 
 
 # Instancia global de configuracao

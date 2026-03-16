@@ -47,6 +47,9 @@ plotly>=5.15
 # Dashboard
 streamlit>=1.30
 
+# News Scraping
+feedparser>=6.0  # RSS feed parsing
+
 # Utilities
 tqdm>=4.65
 joblib>=1.3
