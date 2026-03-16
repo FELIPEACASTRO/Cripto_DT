@@ -18,6 +18,13 @@ except ImportError:
     HAS_SENTENCE_TRANSFORMERS = False
 
 try:
+    from transformers import AutoModel, AutoTokenizer
+
+    HAS_TRANSFORMERS = True
+except ImportError:
+    HAS_TRANSFORMERS = False
+
+try:
     from sklearn.feature_extraction.text import TfidfVectorizer
 
     HAS_TFIDF = True
@@ -26,11 +33,25 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Modelos padrao por backend
+_DEFAULT_MODELS = {
+    "jina": "jinaai/jina-embeddings-v3",
+    "sentence-transformers": "all-MiniLM-L6-v2",
+}
+
+# Limites de sequencia por backend
+_MAX_SEQ_LENGTHS = {
+    "jina": 8192,
+    "sentence-transformers": 512,
+    "tfidf": 512,
+}
+
 FEATURE_NAMES = [
     "ctx_similar_outcome_mean",
     "ctx_similar_outcome_std",
     "ctx_pattern_confidence",
     "ctx_regime_duration_similar",
+    "ctx_narrative_similarity",
 ]
 
 
@@ -41,54 +62,166 @@ class MarketContextMemory:
     por similaridade. Permite ao sistema de trading consultar situacoes
     historicas semelhantes e seus resultados.
 
-    Utiliza sentence-transformers para embeddings; caso nao disponivel,
-    recorre a TF-IDF do sklearn como fallback.
+    Suporta tres backends de embeddings (em ordem de preferencia):
+      1. jina - jinaai/jina-embeddings-v3 via sentence-transformers (8192 tokens)
+      2. sentence-transformers - all-MiniLM-L6-v2 (512 tokens)
+      3. tfidf - TF-IDF do sklearn como fallback
+
+    No modo "auto", tenta jina primeiro, depois sentence-transformers, depois tfidf.
     """
 
     def __init__(
         self,
         memory_path: Path = Path("data/market_memory"),
-        embedding_model: str = "all-MiniLM-L6-v2",
+        embedding_model: str = "auto",
+        embedding_backend: str = "auto",
         max_events: int = 10000,
     ):
         self.memory_path = Path(memory_path)
-        self.embedding_model_name = embedding_model
+        self._embedding_backend_request = embedding_backend
+        self._embedding_model_request = embedding_model
         self.max_events = max_events
         self.events: list[dict] = []
         self._encoder = None
         self._tfidf: TfidfVectorizer | None = None
-        self._use_sentence_transformers = False
+        self._active_backend: str = "none"
 
+        # Resolver backend e modelo
+        self._resolve_backend_and_model(embedding_backend, embedding_model)
         self._init_encoder()
 
-    def _init_encoder(self) -> None:
-        """Inicializa o encoder de embeddings."""
-        if HAS_SENTENCE_TRANSFORMERS:
-            try:
-                self._encoder = SentenceTransformer(self.embedding_model_name)
-                self._use_sentence_transformers = True
-                logger.info(
-                    "Encoder sentence-transformers carregado: %s",
-                    self.embedding_model_name,
-                )
-                return
-            except Exception as e:
-                logger.warning(
-                    "Falha ao carregar sentence-transformers: %s. "
-                    "Usando fallback TF-IDF.",
-                    e,
-                )
+    def _resolve_backend_and_model(
+        self, backend: str, model: str
+    ) -> None:
+        """Resolve o backend e modelo de embeddings a utilizar.
 
-        if HAS_TFIDF:
-            self._tfidf = TfidfVectorizer(max_features=512)
-            self._use_sentence_transformers = False
-            logger.info("Usando TF-IDF como fallback para embeddings.")
+        No modo "auto", tenta jina -> sentence-transformers -> tfidf.
+        """
+        if backend == "auto":
+            # Ordem de preferencia: jina, sentence-transformers, tfidf
+            self._backend_priority = ["jina", "sentence-transformers", "tfidf"]
         else:
-            raise ImportError(
-                "sentence-transformers ou sklearn e necessario para "
-                "MarketContextMemory. Instale com: "
-                "pip install sentence-transformers ou pip install scikit-learn"
+            self._backend_priority = [backend]
+
+        # Modelo sera definido na inicializacao do encoder
+        if model == "auto":
+            self.embedding_model_name = None  # sera preenchido no _init_encoder
+        else:
+            self.embedding_model_name = model
+
+    @property
+    def max_seq_length(self) -> int:
+        """Retorna o limite maximo de tokens do backend ativo.
+
+        Returns:
+            8192 para jina, 512 para os demais.
+        """
+        return _MAX_SEQ_LENGTHS.get(self._active_backend, 512)
+
+    @property
+    def _use_sentence_transformers(self) -> bool:
+        """Compatibilidade: True se backend ativo usa sentence-transformers."""
+        return self._active_backend in ("jina", "sentence-transformers")
+
+    def _init_encoder(self) -> None:
+        """Inicializa o encoder de embeddings seguindo a ordem de prioridade."""
+        for backend in self._backend_priority:
+            if backend == "jina":
+                if not self._try_init_jina():
+                    continue
+                return
+
+            elif backend == "sentence-transformers":
+                if not self._try_init_sentence_transformers():
+                    continue
+                return
+
+            elif backend == "tfidf":
+                if not self._try_init_tfidf():
+                    continue
+                return
+
+        # Nenhum backend disponivel
+        raise ImportError(
+            "Nenhum backend de embeddings disponivel. "
+            "Instale sentence-transformers (pip install sentence-transformers) "
+            "ou scikit-learn (pip install scikit-learn)."
+        )
+
+    def _try_init_jina(self) -> bool:
+        """Tenta inicializar o backend Jina AI via sentence-transformers.
+
+        Jina embeddings v3 funciona com a biblioteca sentence-transformers,
+        suportando sequencias de ate 8192 tokens.
+        """
+        if not HAS_SENTENCE_TRANSFORMERS:
+            logger.debug(
+                "sentence-transformers nao disponivel para backend jina."
             )
+            return False
+
+        model_name = self.embedding_model_name or _DEFAULT_MODELS["jina"]
+        try:
+            self._encoder = SentenceTransformer(model_name, trust_remote_code=True)
+            self._active_backend = "jina"
+            self.embedding_model_name = model_name
+            logger.info(
+                "Encoder Jina AI carregado via sentence-transformers: %s "
+                "(max_seq_length=%d)",
+                model_name,
+                self.max_seq_length,
+            )
+            return True
+        except Exception as e:
+            logger.warning(
+                "Falha ao carregar modelo Jina '%s': %s. "
+                "Tentando proximo backend.",
+                model_name,
+                e,
+            )
+            return False
+
+    def _try_init_sentence_transformers(self) -> bool:
+        """Tenta inicializar o backend sentence-transformers padrao."""
+        if not HAS_SENTENCE_TRANSFORMERS:
+            logger.debug("sentence-transformers nao disponivel.")
+            return False
+
+        model_name = (
+            self.embedding_model_name
+            if self.embedding_model_name
+            and self.embedding_model_name != _DEFAULT_MODELS["jina"]
+            else _DEFAULT_MODELS["sentence-transformers"]
+        )
+        try:
+            self._encoder = SentenceTransformer(model_name)
+            self._active_backend = "sentence-transformers"
+            self.embedding_model_name = model_name
+            logger.info(
+                "Encoder sentence-transformers carregado: %s",
+                model_name,
+            )
+            return True
+        except Exception as e:
+            logger.warning(
+                "Falha ao carregar sentence-transformers '%s': %s. "
+                "Tentando proximo backend.",
+                model_name,
+                e,
+            )
+            return False
+
+    def _try_init_tfidf(self) -> bool:
+        """Tenta inicializar o backend TF-IDF como fallback."""
+        if not HAS_TFIDF:
+            logger.debug("sklearn TfidfVectorizer nao disponivel.")
+            return False
+
+        self._tfidf = TfidfVectorizer(max_features=512)
+        self._active_backend = "tfidf"
+        self.embedding_model_name = "tfidf"
+        logger.info("Usando TF-IDF como fallback para embeddings.")
+        return True
 
     def _encode(self, texts: list[str]) -> np.ndarray:
         """Gera embeddings para uma lista de textos.
@@ -99,7 +232,7 @@ class MarketContextMemory:
         Returns:
             Array (n_texts, embedding_dim) de embeddings.
         """
-        if self._use_sentence_transformers and self._encoder is not None:
+        if self._active_backend in ("jina", "sentence-transformers") and self._encoder is not None:
             return self._encoder.encode(texts, show_progress_bar=False)
 
         # Fallback TF-IDF
@@ -171,7 +304,7 @@ class MarketContextMemory:
             return []
 
         # Recalcular embeddings TF-IDF se necessario
-        if not self._use_sentence_transformers:
+        if self._active_backend == "tfidf":
             all_texts = [e["description"] for e in self.events] + [query]
             try:
                 tfidf_matrix = self._tfidf.fit_transform(all_texts)
@@ -328,6 +461,8 @@ class MarketContextMemory:
           - ctx_pattern_confidence: confianca baseada na quantidade e
             similaridade dos matches
           - ctx_regime_duration_similar: duracao media de regimes similares
+          - ctx_narrative_similarity: similaridade media do contexto atual
+            com os top matches
 
         Args:
             df: DataFrame com colunas close e opcionalmente regime_state.
@@ -394,6 +529,13 @@ class MarketContextMemory:
                 if rdur is not None:
                     regime_durations.append(rdur)
 
+            # Calcular similaridade narrativa media (todos os matches, nao apenas com outcome)
+            all_similarities = [s["similarity"] for s in similar]
+            if all_similarities:
+                df.iloc[
+                    i, df.columns.get_loc("ctx_narrative_similarity")
+                ] = float(np.mean(all_similarities))
+
             if outcomes_1d:
                 outcomes_arr = np.array(outcomes_1d)
                 sim_arr = np.array(similarities)
@@ -435,7 +577,9 @@ class MarketContextMemory:
 
             meta = {
                 "embedding_model": self.embedding_model_name,
+                "embedding_backend": self._active_backend,
                 "max_events": self.max_events,
+                "max_seq_length": self.max_seq_length,
                 "n_events": len(self.events),
                 "use_sentence_transformers": self._use_sentence_transformers,
                 "saved_at": datetime.utcnow().isoformat(),
@@ -444,7 +588,10 @@ class MarketContextMemory:
                 json.dump(meta, f, indent=2, ensure_ascii=False)
 
             logger.info(
-                "Memoria salva em %s (%d eventos).", self.memory_path, len(self.events)
+                "Memoria salva em %s (%d eventos, backend=%s).",
+                self.memory_path,
+                len(self.events),
+                self._active_backend,
             )
         except Exception as e:
             logger.error("Falha ao salvar memoria: %s", e)
@@ -471,10 +618,11 @@ class MarketContextMemory:
                 with open(meta_path, "r", encoding="utf-8") as f:
                     meta = json.load(f)
                 logger.info(
-                    "Memoria carregada de %s: %d eventos (salva em %s).",
+                    "Memoria carregada de %s: %d eventos (salva em %s, backend=%s).",
                     self.memory_path,
                     len(self.events),
                     meta.get("saved_at", "desconhecido"),
+                    meta.get("embedding_backend", "desconhecido"),
                 )
             else:
                 logger.info(

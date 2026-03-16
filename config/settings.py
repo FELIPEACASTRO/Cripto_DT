@@ -84,6 +84,10 @@ class FeatureConfig:
     use_nlp_sentiment: bool = True
     # Whale monitoring
     use_whale: bool = True
+    # Market Context Memory (aiagentstore.ai - Jina AI)
+    embedding_backend: str = "auto"  # "auto", "jina", "sentence-transformers", "tfidf"
+    embedding_model: str = "auto"  # "auto" = seleciona baseado no backend
+    max_context_events: int = 10000
     # Feature selection
     feature_selection_method: str = "boruta"  # "boruta", "l1", "mutual_info", "none"
 

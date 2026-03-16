@@ -29,6 +29,7 @@ shap>=0.43
 
 # NLP / Sentiment (opcional)
 sentence-transformers>=2.2
+transformers>=4.30  # Jina AI embeddings backend (opcional)
 
 # Macro Data
 yfinance>=0.2
@@ -49,6 +50,7 @@ streamlit>=1.30
 
 # News Scraping
 feedparser>=6.0  # RSS feed parsing
+aiohttp>=3.9  # Async HTTP para advanced crawler (opcional)
 
 # Utilities
 tqdm>=4.65
