@@ -449,6 +449,29 @@ class Trainer:
                     except Exception as e:
                         logger.warning(f"  Evolutionary Ensemble falhou: {e}")
 
+            # --- MoE Gating Ensemble (Phase 7 — opcional) ---
+            moe = None
+            if self.config.training.use_moe_ensemble:
+                MoECls = _safe_import("src.models.moe_ensemble", "MoEEnsemble")
+                if MoECls:
+                    try:
+                        logger.info("  Treinando MoE Gating Ensemble...")
+                        moe = MoECls(
+                            n_models=len(model_names),
+                            top_k=min(self.config.moe_ensemble.top_k, len(model_names)),
+                        )
+                        # MoE usa predictions como input (gating aprende roteamento)
+                        moe.fit(val_matrix, y_val_aligned, test_matrix, y_test_aligned)
+                        moe_preds = moe.predict(test_matrix)
+                        moe_dir_acc = float(np.mean(np.sign(moe_preds) == np.sign(y_test_aligned)))
+                        best_dir_acc = float(np.mean(np.sign(ensemble_preds) == np.sign(y_test_aligned)))
+                        logger.info(f"  MoE dir_acc={moe_dir_acc:.4f} vs best={best_dir_acc:.4f}")
+                        if moe_dir_acc > best_dir_acc:
+                            ensemble_preds = moe_preds
+                            logger.info("  -> Usando MoE Gating Ensemble (superior)")
+                    except Exception as e:
+                        logger.warning(f"  MoE Gating falhou: {e}")
+
             # Coletar residuos para Conformal Prediction
             conformal_residuals.extend(
                 (y_test_aligned - ensemble_preds).tolist()
@@ -488,6 +511,7 @@ class Trainer:
             "mamba": mamba, "evidential": evidential, "dual_pred": dual_pred,
             "evo_ensemble": evo_ensemble,
             "chronos": chronos, "ttm": ttm, "moirai": moirai,
+            "moe": moe,
         }
         for name, model in optional_models.items():
             if model is not None:

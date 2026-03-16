@@ -303,6 +303,45 @@ class EvolutionaryEnsembleConfig:
 
 
 # ============================================================
+# Phase 7: MoE Gating + Reasoning
+# ============================================================
+
+@dataclass
+class MoEEnsembleConfig:
+    """MoE Gating Network para roteamento inteligente de ensemble."""
+    hidden_sizes: list[int] = field(default_factory=lambda: [128, 64])
+    top_k: int = 6
+    learning_rate: float = 1e-3
+    weight_decay: float = 1e-4
+    max_epochs: int = 200
+    early_stop_patience: int = 20
+    dropout: float = 0.2
+    diversity_weight: float = 0.01  # Penalidade por concentracao em 1 modelo
+    batch_size: int = 64
+
+
+# ============================================================
+# Phase 9: Synthetic Data & Augmentation
+# ============================================================
+
+@dataclass
+class MarketGANConfig:
+    """MarketGAN para geracao de dados sinteticos de mercado."""
+    latent_dim: int = 32
+    seq_len: int = 60
+    n_features: int = 5  # OHLCV returns
+    gen_channels: list[int] = field(default_factory=lambda: [64, 128, 64])
+    disc_channels: list[int] = field(default_factory=lambda: [64, 128, 64])
+    lr_generator: float = 1e-4
+    lr_discriminator: float = 1e-4
+    batch_size: int = 64
+    n_critic: int = 5  # WGAN-GP: passos do critico por passo do gerador
+    gp_weight: float = 10.0  # Gradient penalty weight
+    max_epochs: int = 500
+    n_synthetic_samples: int = 500
+
+
+# ============================================================
 # Phase 5: Time Series Foundation Models
 # ============================================================
 
@@ -435,6 +474,10 @@ class TrainingConfig:
     use_moirai: bool = True
     # Phase 6: NLP Sentiment
     use_nlp_finbert: bool = True
+    # Phase 7: MoE Gating
+    use_moe_ensemble: bool = True
+    # Phase 9: Synthetic Data
+    use_market_gan: bool = True
 
 
 @dataclass
@@ -466,6 +509,10 @@ class Config:
     moirai: MOIRAIConfig = field(default_factory=MOIRAIConfig)
     # Phase 6: NLP Sentiment
     nlp_sentiment: NLPSentimentConfig = field(default_factory=NLPSentimentConfig)
+    # Phase 7: MoE Gating
+    moe_ensemble: MoEEnsembleConfig = field(default_factory=MoEEnsembleConfig)
+    # Phase 9: Synthetic Data
+    market_gan: MarketGANConfig = field(default_factory=MarketGANConfig)
     # Melhorias (aiagentstore.ai)
     news_scraper: NewsScraperConfig = field(default_factory=NewsScraperConfig)
     signal_generator: SignalGeneratorConfig = field(default_factory=SignalGeneratorConfig)
