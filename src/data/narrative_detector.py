@@ -248,8 +248,11 @@ class NarrativeDetector:
         narrative_df["_date"] = narrative_df["_date"].dt.normalize()
         narrative_df = narrative_df.drop_duplicates(subset=["_date"])
 
-        # Merge com DataFrame principal
-        df["_date"] = pd.to_datetime(df["timestamp"]).dt.normalize()
+        # Merge com DataFrame principal (remover timezone para compatibilidade)
+        ts = pd.to_datetime(df["timestamp"])
+        if ts.dt.tz is not None:
+            ts = ts.dt.tz_localize(None)
+        df["_date"] = ts.dt.normalize()
         df = df.merge(narrative_df, on="_date", how="left")
 
         # Calcular sinal contrario (divergencia preco vs narrativa)

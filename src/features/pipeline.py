@@ -51,8 +51,12 @@ class FeaturePipeline:
     17. Smart Money features (Fase 3 - flow, acumulacao, distribuicao)
     18. Narrative Detection (Fase 3 - 8 narrativas cripto)
     19. Advanced Crawler features (Fase 3 - news count, buzz, fear&greed)
-    20. Cross-crypto features (retornos cruzados) — chamado externamente
-    21. Limpeza final (dropna)
+    20. Regional Market features (Kimchi premium, sessoes regionais)
+    21. Chart Vision features (VISTA-inspired candlestick patterns)
+    22. Blockchain NLP features (crypto sentiment lexicon)
+    23. Multilingual Sentiment (CN, KR, JP, VN, ID, AR)
+    24. Cross-crypto features (retornos cruzados) — chamado externamente
+    25. Limpeza final (dropna)
     """
 
     # Colunas que NAO sao features (metadata e targets)
@@ -160,6 +164,32 @@ class FeaturePipeline:
         Cls = _safe_import("src.data.advanced_crawler", "AdvancedNewsCrawler")
         if Cls:
             self._advanced_crawler = Cls()
+
+        # --- Modulos da pesquisa Oriental (IA Leste Asiatico) ---
+        self._regional_markets = None
+        self._chart_vision = None
+        self._blockchain_nlp = None
+        self._multilingual_sentiment = None
+
+        if config.features.use_regional_markets:
+            Cls = _safe_import("src.features.regional_markets", "RegionalMarketFeatures")
+            if Cls:
+                self._regional_markets = Cls()
+
+        if config.features.use_chart_vision:
+            Cls = _safe_import("src.features.chart_vision", "ChartVisionFeatures")
+            if Cls:
+                self._chart_vision = Cls()
+
+        if config.features.use_blockchain_nlp:
+            Cls = _safe_import("src.features.blockchain_nlp", "BlockchainNLPFeatures")
+            if Cls:
+                self._blockchain_nlp = Cls()
+
+        if config.features.use_multilingual_sentiment:
+            Cls = _safe_import("src.data.multilingual_sentiment", "MultilingualSentimentAnalyzer")
+            if Cls:
+                self._multilingual_sentiment = Cls()
 
     def _get_fear_greed(self) -> pd.DataFrame:
         """Busca Fear & Greed uma unica vez e cacheia."""
@@ -301,12 +331,61 @@ class FeaturePipeline:
             except Exception as e:
                 logger.warning(f"Advanced crawler falhou para {coin}: {e}")
 
-        # 20. Limpeza final — remover linhas com NaN (warm-up dos indicadores)
+        # 20. Regional Market features (Kimchi premium, sessoes, spreads)
+        if self._regional_markets is not None:
+            try:
+                df = self._regional_markets.transform(df)
+            except Exception as e:
+                logger.warning(f"Regional markets falhou: {e}")
+
+        # 21. Chart Vision features (padroes de candlestick, VISTA-inspired)
+        if self._chart_vision is not None:
+            try:
+                df = self._chart_vision.transform(df)
+            except Exception as e:
+                logger.warning(f"Chart vision falhou: {e}")
+
+        # 22. Blockchain NLP features (sentiment lexicon, buzz indicators)
+        if self._blockchain_nlp is not None:
+            try:
+                df = self._blockchain_nlp.transform(df)
+            except Exception as e:
+                logger.warning(f"Blockchain NLP falhou: {e}")
+
+        # 23. Multilingual Sentiment (CN, KR, JP, VN, ID, AR)
+        if self._multilingual_sentiment is not None and coin:
+            try:
+                df = self._multilingual_sentiment.add_sentiment_features(df, coin)
+            except Exception as e:
+                logger.warning(f"Multilingual sentiment falhou para {coin}: {e}")
+
+        # 24. Limpeza final — estrategia inteligente para preservar dados
         n_before = len(df)
-        df = df.dropna().reset_index(drop=True)
+        feature_cols = self.get_feature_columns(df)
+
+        # 20a. Remover colunas com >50% NaN (features que falharam completamente)
+        nan_ratio = df[feature_cols].isna().mean()
+        cols_to_drop = nan_ratio[nan_ratio > 0.5].index.tolist()
+        if cols_to_drop:
+            logger.info(f"  Removendo {len(cols_to_drop)} colunas com >50% NaN: {cols_to_drop[:5]}...")
+            df = df.drop(columns=cols_to_drop)
+
+        # 20b. Forward-fill + backward-fill para NaN restantes (warm-up de indicadores)
+        feature_cols = self.get_feature_columns(df)
+        df[feature_cols] = df[feature_cols].ffill().bfill()
+
+        # 20c. Preencher qualquer NaN restante com 0
+        df[feature_cols] = df[feature_cols].fillna(0)
+
+        # 20d. Remover primeiras linhas onde target pode ser NaN
+        if "target" in df.columns:
+            df = df.dropna(subset=["target"]).reset_index(drop=True)
+        else:
+            df = df.dropna().reset_index(drop=True)
+
         n_removed = n_before - len(df)
         logger.info(
-            f"  Removidas {n_removed} linhas (warm-up). "
+            f"  Removidas {n_removed} linhas (warm-up/target). "
             f"Restam {len(df)} linhas com {len(self.get_feature_columns(df))} features"
         )
 

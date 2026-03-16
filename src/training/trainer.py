@@ -1,5 +1,6 @@
 """Orquestrador de treino: coordena modelos, walk-forward e ensemble."""
 
+import dataclasses
 import json
 import logging
 from pathlib import Path
@@ -40,13 +41,14 @@ def _align_sequence_preds(preds: np.ndarray, target_len: int) -> np.ndarray:
 class Trainer:
     """Orquestra treino completo: features -> walk-forward -> modelos -> ensemble.
 
-    Modelos suportados (16 total):
+    Modelos suportados (20 total):
     - Core: XGBoost Reg/Cls, LSTM, GRU
     - Tree-based: LightGBM Reg/Cls, Random Forest Reg
-    - Deep Learning: CNN-LSTM, TCN, Helformer
-    - Probabilistico: MDN, BNN
+    - Deep Learning: CNN-LSTM, TCN, Helformer, Mamba SSM
+    - Probabilistico: MDN, BNN, Evidential Regression
+    - Dual: CryptoPulse Dual-Prediction
     - Classico: SVM Reg
-    - Meta: Ensemble (Stacking Ridge)
+    - Meta: Ensemble (Performance Weighted), Evolutionary Ensemble (Sakana GA)
     - Incerteza: Conformal Prediction
     """
 
@@ -172,10 +174,14 @@ class Trainer:
             # --- LightGBM Regressor (opcional) ---
             lgbm_reg = None
             if self.config.training.use_lightgbm:
+                lgbm_params = {
+                    k: v for k, v in dataclasses.asdict(self.config.lightgbm).items()
+                    if k != "use_direction"
+                }
                 result = self._train_optional_model(
                     "LightGBM Reg", "src.models.lightgbm_model", "LightGBMRegressor",
                     X_train_s, y_train, X_val_s, y_val, X_test_s,
-                    config=self.config.lightgbm,
+                    **lgbm_params,
                 )
                 if result:
                     lgbm_reg, lgbm_val, lgbm_test = result
@@ -273,11 +279,51 @@ class Trainer:
                     fold_val_preds["bnn"] = bnn_val
                     fold_preds["bnn"] = bnn_test
 
+            # --- Mamba SSM (opcional) ---
+            mamba = None
+            if self.config.training.use_mamba:
+                result = self._train_optional_model(
+                    "Mamba SSM", "src.models.mamba_model", "MambaModel",
+                    X_train_s, y_train, X_val_s, y_val, X_test_s,
+                    is_sequence=True,
+                )
+                if result:
+                    mamba, mamba_val, mamba_test = result
+                    fold_val_preds["mamba"] = _align_sequence_preds(mamba_val, len(y_val))
+                    fold_preds["mamba"] = _align_sequence_preds(mamba_test, len(y_test))
+
+            # --- Evidential Regression (opcional) ---
+            evidential = None
+            if self.config.training.use_evidential:
+                n_features = X_train_s.shape[1]
+                result = self._train_optional_model(
+                    "Evidential", "src.models.evidential", "EvidentialModel",
+                    X_train_s, y_train, X_val_s, y_val, X_test_s,
+                    input_size=n_features,
+                )
+                if result:
+                    evidential, evid_val, evid_test = result
+                    fold_val_preds["evidential"] = evid_val
+                    fold_preds["evidential"] = evid_test
+
+            # --- Dual Prediction / CryptoPulse (opcional) ---
+            dual_pred = None
+            if self.config.training.use_dual_prediction:
+                result = self._train_optional_model(
+                    "Dual Prediction", "src.models.dual_prediction", "DualPredictionModel",
+                    X_train_s, y_train, X_val_s, y_val, X_test_s,
+                )
+                if result:
+                    dual_pred, dual_val, dual_test = result
+                    fold_val_preds["dual_pred"] = dual_val
+                    fold_preds["dual_pred"] = dual_test
+
             # --- Ensemble ---
             logger.info("  Treinando Ensemble...")
             min_val_len = min(len(v) for v in fold_val_preds.values())
             min_test_len = min(len(v) for v in fold_preds.values())
 
+            model_names = list(fold_val_preds.keys())
             val_matrix = np.column_stack([
                 v[-min_val_len:] for v in fold_val_preds.values()
             ])
@@ -287,9 +333,47 @@ class Trainer:
             y_val_aligned = y_val[-min_val_len:]
             y_test_aligned = y_test[-min_test_len:]
 
-            ensemble = EnsembleModel(method="stacking")
-            ensemble.fit(val_matrix, y_val_aligned, test_matrix, y_test_aligned)
+            # Compute per-model directional accuracy on validation set
+            val_dir_accuracies = np.array([
+                float(np.mean(
+                    np.sign(fold_val_preds[name][-min_val_len:])
+                    == np.sign(y_val_aligned)
+                ))
+                for name in model_names
+            ])
+
+            ensemble = EnsembleModel(method="performance_weighted")
+            ensemble.fit(
+                val_matrix, y_val_aligned,
+                test_matrix, y_test_aligned,
+                model_names=model_names,
+                val_dir_accuracies=val_dir_accuracies,
+            )
             ensemble_preds = ensemble.predict(test_matrix)
+
+            # --- Evolutionary Ensemble (opcional) ---
+            evo_ensemble = None
+            if self.config.training.use_evolutionary_ensemble:
+                EvoCls = _safe_import("src.models.evolutionary_ensemble", "EvolutionaryEnsemble")
+                if EvoCls:
+                    try:
+                        logger.info("  Treinando Evolutionary Ensemble...")
+                        evo_ensemble = EvoCls()
+                        evo_ensemble.fit(
+                            val_matrix, y_val_aligned,
+                            test_matrix, y_test_aligned,
+                            model_names=model_names,
+                        )
+                        evo_preds = evo_ensemble.predict(test_matrix)
+                        evo_dir_acc = float(np.mean(np.sign(evo_preds) == np.sign(y_test_aligned)))
+                        ens_dir_acc = float(np.mean(np.sign(ensemble_preds) == np.sign(y_test_aligned)))
+                        logger.info(f"  Evo ensemble dir_acc={evo_dir_acc:.4f} vs standard={ens_dir_acc:.4f}")
+                        # Usar evolutionary se superior
+                        if evo_dir_acc > ens_dir_acc:
+                            ensemble_preds = evo_preds
+                            logger.info("  -> Usando Evolutionary Ensemble (superior)")
+                    except Exception as e:
+                        logger.warning(f"  Evolutionary Ensemble falhou: {e}")
 
             # Coletar residuos para Conformal Prediction
             conformal_residuals.extend(
@@ -327,6 +411,7 @@ class Trainer:
             "lgbm_reg": lgbm_reg, "rf_reg": rf_reg, "svm_reg": svm_reg,
             "cnn_lstm": cnn_lstm, "tcn": tcn, "helformer": helformer,
             "mdn": mdn, "bnn": bnn,
+            "mamba": mamba, "evidential": evidential, "dual_pred": dual_pred,
         }
         for name, model in optional_models.items():
             if model is not None:

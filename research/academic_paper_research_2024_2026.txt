@@ -1,0 +1,855 @@
+================================================================================
+EXHAUSTIVE ACADEMIC PAPER RESEARCH: Financial AI, Crypto Prediction,
+Time Series Forecasting (2023-2026)
+================================================================================
+Date: 2026-03-16
+Focus: Papers directly relevant to crypto prediction platform improvement
+Platform Stack: XGBoost, LSTM, GRU, LightGBM, RF, SVM, CNN-LSTM, TCN,
+               Helformer, EMGNN, MDN, BNN, ensemble methods, NLP sentiment,
+               multi-agent architecture
+================================================================================
+
+TABLE OF CONTENTS
+-----------------
+A. VERIFICATION OF KNOWN PAPERS (15 papers)
+B. NEW PAPERS: Crypto-Specific (10+ papers)
+C. NEW PAPERS: Time Series Foundation Models (10+ papers)
+D. NEW PAPERS: Financial NLP & Sentiment (8+ papers)
+E. NEW PAPERS: Multi-Agent & RL Trading (10+ papers)
+F. NEW PAPERS: Graph Neural Networks for Finance (6+ papers)
+G. NEW PAPERS: Mamba/SSM for Finance (4+ papers)
+H. NEW PAPERS: Benchmarks, Surveys, and Tools (6+ papers)
+I. SUMMARY: Top 20 Most Actionable Papers for Our Platform
+
+================================================================================
+SECTION A: VERIFICATION OF KNOWN PAPERS
+================================================================================
+
+[A1] MIGA: Mixture-of-Experts with Group Aggregation for Stock Market Prediction
+    - Authors: Zhaojian Yu, Yinghao Wu, Genesis Wang, Heming Weng
+    - arXiv: 2410.02241 (October 2024)
+    - Venue: AAAI 2025 Workshop (accepted at OpenReview)
+    - VERIFIED: YES - Paper exists and is correctly described
+    - Key: MoE framework with inner group attention for Chinese stocks
+    - Results: 24% excess annual return on CSI300, +8% over SOTA
+    - Relevance to Our System: 9/10
+    - How to use: Replace our static ensemble with MoE-style dynamic routing
+      between our 16 models based on market style/regime
+
+[A2] Time-MoE: Billion-Scale Time Series Foundation Models with MoE
+    - Authors: Xiaoming Shi et al. (Salesforce, multiple institutions)
+    - arXiv: 2409.16040 (September 2024)
+    - Venue: ICLR 2025 Spotlight (Top 5.1%)
+    - VERIFIED: YES
+    - Key: 2.4B parameter MoE time series model, Time-300B dataset (300B+ points)
+    - Results: Consistently outperforms dense models at same compute budget
+    - Relevance: 8/10
+    - How to use: Use as pre-trained backbone, fine-tune on crypto data;
+      or adapt the sparse MoE architecture for our ensemble
+
+[A3] DanQing (arXiv: 2601.10305)
+    - VERIFIED: NOT A FINANCIAL PAPER
+    - Actual content: Large-scale Chinese Vision-Language Pre-training Dataset
+    - 100M image-text pairs from Common Crawl
+    - NOT relevant to crypto prediction - REMOVE FROM LIST
+
+[A4] DEJIMA (arXiv: 2512.00773)
+    - VERIFIED: NOT A FINANCIAL PAPER
+    - Actual content: Japanese Vision-Language Dataset for Image Captioning/VQA
+    - 3.88M image-text pairs
+    - NOT relevant to crypto prediction - REMOVE FROM LIST
+
+[A5] CryptoMamba: Leveraging State Space Models for Bitcoin Price Prediction
+    - Authors: M. Shahab Sepehri et al.
+    - arXiv: 2501.01010 (January 2025)
+    - Venue: IEEE ICBC 2025
+    - VERIFIED: YES
+    - Key: Mamba SSM for long-range dependencies in BTC price data
+    - Methodology: 14-day input window, next-day close prediction
+    - Data: Yahoo Finance BTC daily, Sept 2018 - Sept 2024
+    - Relevance: 10/10 - Directly applicable to our crypto pipeline
+    - How to use: Add Mamba-based model as 17th model in our ensemble;
+      replace or complement LSTM for long-range dependency capture
+
+[A6] FinCast: A Foundation Model for Financial Time-Series Forecasting
+    - Authors: Zhuohang Zhu et al.
+    - arXiv: 2508.19609 (August 2025)
+    - Venue: CIKM 2025
+    - VERIFIED: YES
+    - Key: 1B parameter decoder-only sparse MoE transformer
+    - Trained on 20B+ financial time points across multiple domains
+    - Point-Quantile loss (PQ-loss) for uncertainty + point forecasts
+    - Results: 20-23% error reduction over SOTA, strong zero-shot
+    - Relevance: 9/10
+    - How to use: Use PQ-loss design for uncertainty estimation in our MDN/BNN;
+      or fine-tune FinCast directly for crypto
+
+[A7] Sundial: A Family of Highly Capable Time Series Foundation Models
+    - Authors: Tsinghua University (thuml)
+    - arXiv: 2502.00816 (February 2025)
+    - Venue: ICML 2025 Oral (Top 1%)
+    - VERIFIED: YES
+    - Key: TimeFlow Loss based on flow-matching for continuous time series
+    - TimeBench: 1 trillion time points for pre-training
+    - SOTA on TSLib, GIFT-Eval, FEV benchmarks
+    - Relevance: 8/10
+    - How to use: Adopt flow-matching loss for probabilistic predictions;
+      fine-tune Sundial models on crypto data
+
+[A8] FinCoT: Grounding Chain-of-Thought in Expert Financial Reasoning
+    - Authors: Multiple institutions
+    - arXiv: 2506.16123 (June 2025)
+    - VERIFIED: YES
+    - Key: Structured CoT prompting with Mermaid blueprint templates
+    - Results: Qwen3-8B-Base improved from 63.2% to 80.5% accuracy
+    - Relevance: 7/10
+    - How to use: Integrate FinCoT prompting into our multi-agent LLM
+      reasoning layer for market analysis and signal interpretation
+
+[A9] TradingAgents: Multi-Agents LLM Financial Trading Framework
+    - Authors: Tauric Research
+    - arXiv: 2412.20138 (December 2024)
+    - VERIFIED: YES
+    - Key: LLM agents as Fundamental/Sentiment/Technical/News analysts,
+      with Researcher debate (bullish vs bearish), Trader, Risk Manager
+    - Built with LangGraph, supports multiple LLM providers
+    - Relevance: 9/10
+    - How to use: Directly map to our multi-agent architecture;
+      adopt the bullish/bearish researcher debate mechanism
+
+[A10] MarketGANs: Multivariate financial time-series data augmentation
+    - Authors: Jeonggyu Huh, Seungwon Jeong et al. (Korean institutions)
+    - arXiv: 2601.17773 (January 2026)
+    - VERIFIED: YES
+    - Key: Factor-based GAN with TCN backbone for data augmentation
+    - Captures heavy tails, volatility clustering, leverage effects
+    - Relevance: 8/10
+    - How to use: Generate synthetic crypto training data to augment
+      limited historical samples for regime-specific training
+
+[A11] FinBERT-BiLSTM: Predicting Volatile Crypto Market Prices
+    - Authors: Multiple
+    - arXiv: 2411.12748 (November 2024)
+    - VERIFIED: YES
+    - Key: FinBERT sentiment + BiLSTM for BTC/ETH price prediction
+    - Distinctive dataset of BTC/ETH financial news
+    - Compares intra-day vs one-day-ahead predictions
+    - Relevance: 9/10
+    - How to use: Directly integrate news sentiment via FinBERT into our
+      LSTM/BiLSTM models; benchmark against our current NLP pipeline
+
+[A12] MORFI: Multimodal Zero-Shot Reasoning for Financial Time-Series
+    - Authors: Khezresmaeilzadeh et al.
+    - Venue: ICCV 2025 Workshop on MMFM
+    - VERIFIED: YES
+    - Key: VLM-based multi-modal stock forecasting (text + charts)
+    - Zero-shot, training-free framework
+    - Results: Up to 89.83% error reduction over baselines
+    - Relevance: 7/10
+    - How to use: Add visual chart analysis modality to our system;
+      use VLMs for additional signal generation
+
+[A13] DeXposure-FM: Time-series, Graph Foundation Model for DeFi
+    - arXiv: 2602.03981 (February 2026)
+    - VERIFIED: YES
+    - Key: Graph-tabular encoder for DeFi credit exposure forecasting
+    - 43.7M entries across 4,300+ protocols on 602 blockchains
+    - Relevance: 8/10
+    - How to use: Integrate DeFi protocol health metrics as features;
+      use for systemic risk monitoring in crypto portfolio
+
+[A14] PreBit: Multimodal model for Bitcoin extreme price movement
+    - arXiv: 2206.00648 (June 2022)
+    - VERIFIED: YES
+    - Key: Twitter FinBERT embeddings for extreme BTC price prediction
+    - 5000 tweets/day dataset from 2015-2021
+    - Relevance: 7/10
+    - How to use: Incorporate extreme movement prediction as risk signal
+
+[A15] Timer-S1: Billion-Scale Time Series Foundation Model
+    - Authors: Tsinghua University (thuml)
+    - arXiv: 2603.04791 (March 2026)
+    - VERIFIED: YES
+    - Key: 8.3B parameter sparse MoE (0.75B active per token)
+    - Serial-Token Prediction, 11.5K context length
+    - SOTA on GIFT-Eval (best MASE and CRPS scores)
+    - Relevance: 8/10
+    - How to use: Most capable pre-trained time series model available;
+      fine-tune for crypto with extended context windows
+
+================================================================================
+SECTION B: NEW PAPERS - CRYPTO-SPECIFIC
+================================================================================
+
+[B1] CryptoPulse: Short-Term Cryptocurrency Forecasting with Dual-Prediction
+    - Authors: Amit Kumar, Taoran Ji
+    - arXiv: 2502.19349 (February 2025)
+    - Venue: IEEE BigData 2024
+    - Key: Dual prediction with macro fluctuations + technical indicators
+    - Data: 25,210 Cointelegraph articles, 75 cryptos (92% market cap)
+    - Results: MAE improved 10.4-63.8%, MSE improved 17.2-69.0%
+    - Relevance: 10/10
+    - How to use: Adopt dual-prediction architecture integrating macro crypto
+      correlations with individual asset technical analysis
+
+[B2] Meta-RL-Crypto: Meta-Learning RL for Crypto-Return Prediction
+    - Authors: Junqiao Wang, Zhaoyang Guan, Guanyu Liu et al.
+    - arXiv: 2509.09751 (September 2025)
+    - Key: Unified transformer with meta-learning + RL, self-improving agent
+    - Actor/judge/meta-judge closed-loop architecture
+    - Multimodal: on-chain activity, news, social sentiment
+    - Relevance: 10/10
+    - How to use: Add meta-learning loop to our RL components for
+      rapid adaptation to regime changes; integrate on-chain data
+
+[B3] EMGNN: Evolving Multiscale Graph Neural Network for Crypto Volatility
+    - Authors: Yang Zhou, Chi Xie, Gang-Jin Wang, Jue Gong, You Zhu
+    - Published: Financial Innovation, 2025
+    - Key: Hierarchical evolving graph structure for crypto-market interactions
+    - Models dynamic, scale-specific interactions across time horizons
+    - Relevance: 10/10 - Directly targets our EMGNN component
+    - How to use: This IS our EMGNN reference; validate our implementation
+      against this paper's methodology and results
+
+[B4] LSTM+XGBoost for Crypto Price Prediction
+    - arXiv: 2506.22055 (June 2025)
+    - Key: Hybrid combining LSTM deep features with XGBoost ensemble
+    - Relevance: 8/10
+    - How to use: We already have both; validate our ensemble combination
+      approach against this paper's specific integration method
+
+[B5] Quantifying Cryptocurrency Unpredictability
+    - arXiv: 2502.09079 (February 2025)
+    - Key: Compares crypto time-series to Brownian motion
+    - Studies market efficiency and randomness characteristics
+    - Provides theoretical bounds on prediction accuracy
+    - Relevance: 7/10
+    - How to use: Calibrate expectations for prediction accuracy;
+      identify which crypto assets are most/least predictable
+
+[B6] Deep Learning and NLP in Cryptocurrency Forecasting
+    - Authors: Multiple
+    - Published: International Journal of Forecasting, 2025
+    - arXiv: 2311.14759
+    - Key: Integrates financial, blockchain, and social media data
+    - BART MNLI zero-shot classification for bullish/bearish detection
+    - Relevance: 9/10
+    - How to use: Replace traditional sentiment with zero-shot NLI approach;
+      integrate blockchain data features alongside social media
+
+[B7] Crypto Portfolio Risk: Simulation-Based Framework
+    - arXiv: 2507.08915 (July 2025)
+    - Key: Volatility stress testing, stablecoin hedging, contagion modeling,
+      Monte Carlo simulation for crypto portfolio risk
+    - Relevance: 7/10
+    - How to use: Add stress testing and contagion modeling to risk management
+
+[B8] Revisiting Ensemble Methods for Crypto Trading (FinRL Contests)
+    - arXiv: 2501.10709 (January 2025)
+    - Key: Ensemble deep RL for ICAIF FinRL Contests 2023/2024 crypto tasks
+    - Relevance: 9/10
+    - How to use: Benchmark our ensemble approach against contest-winning
+      strategies; adopt winning ensemble combination methods
+
+[B9] Probabilistic Forecasting Crypto Volatility: Point to Quantile
+    - arXiv: 2508.15922 (August 2025)
+    - Key: Point forecasts from HAR/GARCH/ARFIMA + ML for conditional
+      quantile estimation of crypto realized variance
+    - Relevance: 8/10
+    - How to use: Add quantile regression layer on top of our point
+      predictions for better uncertainty estimation
+
+[B10] Forecasting Bitcoin Volatility through On-Chain and Whale-Alert
+    - Published: ResearchGate (2023-2024)
+    - Key: Q-learning with Whale Alert Twitter data + on-chain metrics
+    - Results: 22% improvement in BTC volatility forecasts with whale data
+    - Relevance: 8/10
+    - How to use: Integrate whale alert signals and on-chain metrics
+      as additional features in our prediction pipeline
+
+================================================================================
+SECTION C: NEW PAPERS - TIME SERIES FOUNDATION MODELS
+================================================================================
+
+[C1] DELPHYNE: Pre-Trained Model for General and Financial Time Series
+    - Authors: Bloomberg AI Engineering & Quant Research
+    - arXiv: 2506.06288 (June 2025)
+    - Venue: NeurIPS 2025
+    - Key: First TSM capable of both general and finance-specific tasks
+    - Trained on LOTSA + financial data; handles noisy, multivariate data
+    - Superior performance on volatility modeling and nowcasting
+    - Relevance: 9/10
+    - How to use: Fine-tune on crypto data for volatility/price forecasting;
+      Bloomberg-grade financial time series foundation
+
+[C2] Kronos: Foundation Model for the Language of Financial Markets
+    - Authors: Yu Shi et al. (Tsinghua)
+    - arXiv: 2508.02739 (August 2025)
+    - Key: Specialized for K-line (OHLCV) data, 12B+ K-line records
+    - Autoregressive transformer with specialized tokenizer
+    - Data from 45 global exchanges
+    - Relevance: 9/10
+    - How to use: Use Kronos tokenizer design for our OHLCV processing;
+      fine-tune on crypto exchange data
+
+[C3] ProbFM: Probabilistic Time Series Foundation Model
+    - arXiv: 2601.10591 (January 2026)
+    - Venue: ICAIF 2025 Oral, AAAI 2026 Oral
+    - Key: Deep Evidential Regression for epistemic-aleatoric uncertainty
+    - Single-pass inference, no sampling needed
+    - Validated on cryptocurrency return forecasting
+    - Relevance: 10/10
+    - How to use: Replace/upgrade our BNN uncertainty estimation with
+      evidential regression; already validated on crypto
+
+[C4] Re(Visiting) Time Series Foundation Models in Finance
+    - Authors: Eghbal Rahimikia, Hao Ni, Weiguan Wang
+    - arXiv: 2511.18578 (November 2025)
+    - Key: Comprehensive empirical study of TSFMs in global finance
+    - CRITICAL FINDING: Off-the-shelf TSFMs perform poorly in zero-shot;
+      models pre-trained from scratch on financial data achieve
+      substantial improvements
+    - Relevance: 9/10
+    - How to use: Do NOT use general TSFMs zero-shot for crypto;
+      instead pre-train or heavily fine-tune on financial data
+
+[C5] iTransformer: Inverted Transformers for Time Series Forecasting
+    - Authors: Tsinghua University (thuml)
+    - arXiv: 2310.06625 (October 2023)
+    - Venue: ICLR 2024 Spotlight
+    - Key: Inverts channels and time, attention on variate tokens
+    - Excellent for high-dimensional multivariate time series
+    - Relevance: 8/10
+    - How to use: Add iTransformer as model in our ensemble for
+      capturing cross-crypto correlations
+
+[C6] DualPathTST: Dual-Pathway PatchTST with Cross-Variable Dependency
+    - Published: Tsinghua Science and Technology, 2026
+    - Key: Extends PatchTST with cross-variable dependency modeling
+    - Relevance: 7/10
+    - How to use: Upgrade from standard PatchTST to capture inter-crypto
+      dependencies
+
+[C7] Reverso: Efficient Time Series Foundation Models for Zero-shot
+    - arXiv: 2602.17634 (February 2026)
+    - Key: Efficient zero-shot forecasting
+    - Relevance: 7/10
+    - How to use: Lightweight alternative for zero-shot crypto prediction
+
+[C8] TimeOmni-1: Complex Reasoning with Time Series in LLMs
+    - Authors: NVIDIA Research
+    - arXiv: 2509.24803 (September 2025)
+    - Key: First unified reasoning model for time series
+    - TSR-Suite with 23K+ samples
+    - 64.0% causality discovery vs 35.9% GPT-4.1
+    - Relevance: 8/10
+    - How to use: Use for causality discovery in crypto markets;
+      identify which factors actually cause price movements
+
+[C9] TimeART: Agentic Time Series Reasoning via Tool-Augmentation
+    - Authors: Xingjian Wu et al.
+    - arXiv: 2601.13653 (January 2026)
+    - Key: 21 tools + LLM for time series question answering
+    - 100K expert trajectory corpus (TimeToolBench)
+    - 8B model achieves SOTA on multiple TSQA tasks
+    - Relevance: 7/10
+    - How to use: Adopt tool-augmented approach for our multi-agent system;
+      let agents use specialized analysis tools
+
+[C10] Forecasting Probability Distributions of Financial Returns
+    - arXiv: 2508.18921 (August 2025)
+    - Key: LSTM with skewed Student's t distribution performs best
+    - Custom loss functions for Normal, Student's t, skewed-t
+    - Relevance: 8/10
+    - How to use: Upgrade our MDN output distribution from Gaussian
+      to skewed Student's t for heavy-tailed crypto returns
+
+================================================================================
+SECTION D: NEW PAPERS - FINANCIAL NLP & SENTIMENT
+================================================================================
+
+[D1] Fin-R1: LLM for Financial Reasoning through Reinforcement Learning
+    - Authors: SUFE-AIFLM Lab (Shanghai University of Finance & Economics)
+    - arXiv: 2503.16252 (March 2025)
+    - Key: 7B financial reasoning LLM, 60K CoT samples
+    - SFT + RL training pipeline
+    - Competitive with much larger models
+    - Relevance: 8/10
+    - How to use: Deploy as reasoning engine in our multi-agent system;
+      small enough for local deployment
+
+[D2] FinGPT: Open-Source Financial Large Language Models
+    - Authors: AI4Finance Foundation (Columbia)
+    - arXiv: 2306.06031 (2023, continuously updated)
+    - Key: Data-centric approach, LoRA fine-tuning (6.17B to 3.67M params)
+    - v3: Best scores on most financial sentiment benchmarks
+    - FinGPT-RAG for retrieval-augmented sentiment analysis
+    - Relevance: 9/10
+    - How to use: Replace our sentiment analysis backbone with FinGPT;
+      use RAG approach for incorporating recent crypto news
+
+[D3] FinDPO: Financial Sentiment for Algorithmic Trading
+    - arXiv: 2507.18417 (July 2025)
+    - Venue: ICAIF 2025
+    - Key: DPO-based preference optimization on Llama-3-8B
+    - 11% improvement over supervised fine-tuned models
+    - Logit-to-score conversion for continuous sentiment scores
+    - 67% annual return, Sharpe 2.0 under realistic costs
+    - Relevance: 9/10
+    - How to use: Apply DPO training to our sentiment model;
+      adopt logit-to-score conversion for continuous signals
+
+[D4] FinCoT (see A8 above) - Financial Chain-of-Thought Prompting
+
+[D5] FinTral: GPT-4 Level Multimodal Financial LLMs
+    - arXiv: 2402.10986 (February 2024)
+    - Venue: ACL 2024 Findings
+    - Key: Mistral-7B fine-tuned for multimodal financial analysis
+    - Text, numerical, tabular, image data integration
+    - Outperforms ChatGPT-3.5 on all tasks, GPT-4 on 5/9 tasks
+    - Relevance: 8/10
+    - How to use: Use for multimodal crypto analysis combining
+      text news, price charts, and tabular on-chain data
+
+[D6] Open-FinLLMs: Open Multimodal Financial LLMs
+    - Authors: AI4Finance Foundation
+    - arXiv: 2408.11878 (August 2024)
+    - Key: FinLLaMA (52B token pre-training), FinLLaMA-Instruct (573K),
+      FinLLaVA (1.43M multimodal pairs)
+    - Outperforms GPT-4 across financial tasks
+    - Relevance: 8/10
+    - How to use: Use FinLLaVA for chart understanding + news analysis
+
+[D7] CFQA: Chinese Financial Question Answering Benchmark
+    - Published: EPJ Data Science, December 2025
+    - Key: QA from Chinese listed company annual reports
+    - Complex tabular PDF structures
+    - Relevance: 6/10
+    - How to use: Benchmark financial reasoning capabilities
+
+[D8] Evaluating LLMs' Mathematical Reasoning in Financial Document QA
+    - arXiv: 2402.11194 (February 2024)
+    - Key: Evaluation on TATQA, FinQA, ConvFinQA, Multihiertt
+    - Novel prompting for semi-structured documents
+    - Relevance: 6/10
+
+================================================================================
+SECTION E: NEW PAPERS - MULTI-AGENT & RL TRADING
+================================================================================
+
+[E1] FLAG-Trader: Fusion LLM-Agent with Gradient-based RL for Trading
+    - Authors: 13 researchers from multiple institutions
+    - arXiv: 2502.11433 (February 2025)
+    - Key: Unified LLM + policy gradient RL architecture
+    - LLM as policy network with PPO optimization
+    - Parameter-efficient fine-tuning for financial domain
+    - Relevance: 9/10
+    - How to use: Adopt the LLM-as-policy-network paradigm for our
+      multi-agent trading decisions
+
+[E2] FinCon: Synthesized LLM Multi-Agent System
+    - Authors: Multiple institutions
+    - arXiv: 2407.06567 (July 2024)
+    - Key: Manager-analyst communication hierarchy
+    - Self-critiquing risk control mechanism
+    - Conceptual verbal reinforcement for agent behavior
+    - Relevance: 9/10
+    - How to use: Implement manager-analyst hierarchy in our multi-agent
+      system; add self-critiquing risk control
+
+[E3] AlphaQuanter: Agentic RL Framework for Stock Trading
+    - Authors: Zheye Deng, Jiashu Wang
+    - arXiv: 2510.14264 (October 2025)
+    - Key: Single-agent RL with tool-augmented ReAct-like workflow
+    - Process-based and outcome-based reward signals
+    - SOTA financial metrics
+    - Relevance: 8/10
+    - How to use: Adopt tool-orchestrated approach for our agents;
+      implement process-based rewards for training
+
+[E4] Trading-R1: Financial Trading with LLM Reasoning via RL
+    - Authors: UCLA, UW, Stanford, Tauric Research
+    - arXiv: 2509.11420 (September 2025)
+    - Key: SFT + RL with easy-to-hard curriculum
+    - 100K sample corpus, 14 equities, 5 data sources
+    - Improved risk-adjusted returns and lower drawdowns
+    - Relevance: 8/10
+    - How to use: Apply curriculum RL training to our agents;
+      adopt the thesis-composition reasoning approach
+
+[E5] Alpha-R1: Alpha Screening with LLM Reasoning via RL
+    - Authors: FinStep-AI
+    - arXiv: 2512.23515 (December 2025)
+    - Key: 8B model for context-aware alpha factor screening
+    - Reasons over factor logic + real-time news
+    - Robust to alpha decay
+    - Relevance: 8/10
+    - How to use: Apply to crypto factor identification;
+      contextual alpha activation/deactivation
+
+[E6] AlphaAgent: LLM-Driven Alpha Mining with Regularized Exploration
+    - Authors: Multiple institutions
+    - arXiv: 2502.16789 (February 2025)
+    - Venue: KDD 2025
+    - Key: Idea Agent + Factor Agent + Eval Agent pipeline
+    - AST-based originality enforcement and complexity control
+    - 11.0% excess return (IR=1.5) on CSI 500, 8.74% (IR=1.05) on S&P 500
+    - Relevance: 8/10
+    - How to use: Adopt multi-agent alpha mining for crypto factor discovery
+
+[E7] FinRL-DeepSeek: LLM-Infused Risk-Sensitive RL for Trading
+    - Authors: Multiple
+    - arXiv: 2502.07393 (February 2025)
+    - Key: CPPO + DeepSeek/Qwen/Llama for risk-aware trading
+    - Uses financial news data (FNSPID dataset)
+    - Basis for FinRL Contest 2025
+    - Relevance: 8/10
+    - How to use: Adopt risk-sensitive RL (CPPO) for our trading agent;
+      use DeepSeek for news signal generation
+
+[E8] Financial News-Driven LLM RL for Portfolio Management
+    - Authors: Ananya Unnikrishnan
+    - arXiv: 2411.11059 (November 2024)
+    - Key: LLM sentiment integration into RL frameworks
+    - Portfolio RL outperforms buy-and-hold strategies
+    - Relevance: 7/10
+    - How to use: Integrate our NLP sentiment signals into RL reward
+      function for portfolio optimization
+
+[E9] Automate Strategy Finding with LLM in Quant Investment
+    - Authors: Zhizhuo Kou, Holam Yu
+    - arXiv: 2409.06289 (September 2024)
+    - Key: Three-stage framework: alpha generation, multi-agent evaluation,
+      dynamic optimization with weight gating
+    - 53.17% cumulative return on SSE50 (Jan 2023-Jan 2024)
+    - Relevance: 8/10
+    - How to use: Apply weight gating layer for dynamic strategy selection
+      in our ensemble; use LLMs for alpha factor generation
+
+[E10] Modelling Crypto Markets by Multi-Agent RL
+    - Authors: Lussange, Vrizzi, Palminteri, Gutkin (ENS Paris, HSE Moscow)
+    - arXiv: 2402.10803 (February 2024)
+    - Key: MARL simulation of 153 Binance cryptos (2018-2022)
+    - Bottom-up approach to crypto market complexity
+    - Relevance: 8/10
+    - How to use: Use MARL market simulation for strategy backtesting;
+      understand emergent market behaviors
+
+[E11] FinRL Contests: Benchmarking Data-driven Financial RL Agents
+    - Authors: Columbia University (AI4Finance)
+    - arXiv: 2504.02281 (April 2025)
+    - Published: AI for Engineering (Wiley), 2025
+    - Key: Covers stock trading, crypto trading, LLM signals tasks
+    - FinRL-AlphaSeek for Crypto Trading (2025 task)
+    - Relevance: 8/10
+    - How to use: Benchmark our RL agents against contest results
+
+================================================================================
+SECTION F: NEW PAPERS - GRAPH NEURAL NETWORKS FOR FINANCE
+================================================================================
+
+[F1] THGNN: Temporal and Heterogeneous Graph Neural Network
+    - Authors: Sheng Xiang, Dawei Cheng et al. (Tongji University)
+    - arXiv: 2305.08740 (May 2023)
+    - Venue: CIKM 2022
+    - Key: Dynamic stock relation graphs + transformer encoder
+    - Deployed in real-world quant trading system
+    - Tested on US and Chinese markets
+    - Relevance: 9/10
+    - How to use: Build dynamic crypto correlation graph updated daily;
+      combine with our existing GNN components
+
+[F2] SAMBA: Graph-Mamba Approach for Stock Price Prediction
+    - Authors: Ali Mehrabian et al.
+    - arXiv: 2410.03707 (October 2024, revised January 2025)
+    - Key: Bidirectional Mamba + adaptive graph convolution
+    - Near-linear computational complexity
+    - Tested on NASDAQ, NYSE, DJIA
+    - Relevance: 8/10
+    - How to use: Combine Mamba efficiency with GNN for crypto correlation
+      modeling at scale
+
+[F3] DGDNN: Decoupled Graph Diffusion Neural Network for Stock Movement
+    - Authors: Divyanshu You et al. (University of Bristol)
+    - arXiv: 2401.01846 (January 2024)
+    - Venue: ICAART 2024
+    - Key: Entropy-driven edge generation, hierarchical intra-stock features
+    - No expert knowledge needed for graph construction
+    - Relevance: 7/10
+    - How to use: Adopt automatic graph construction for crypto relationships
+
+[F4] ECHO-GL: Earnings Calls-Driven Heterogeneous Graph Learning
+    - Authors: Mengpu Liu et al. (Zhejiang University)
+    - Venue: AAAI 2024
+    - Key: Earnings call NLP + heterogeneous graph for stock movement
+    - Customizable learnable stock stochastic processes (PEAD)
+    - Relevance: 7/10
+    - How to use: Apply heterogeneous graph approach using crypto project
+      announcements, AMAs, and protocol updates
+
+[F5] FinMamba: Market-Aware Graph Enhanced Multi-Level Mamba
+    - Authors: Multiple (Chinese institutions)
+    - arXiv: 2502.06707 (February 2025)
+    - Key: Dynamic graph with market-aware pruning + multi-level Mamba
+    - Both US and Chinese market validation
+    - Linear time complexity
+    - Relevance: 9/10
+    - How to use: Adopt market-aware dynamic graph pruning for crypto;
+      multi-level temporal pattern extraction
+
+[F6] Computing Systemic Risk Measures with GNNs
+    - arXiv: 2410.07222 (October 2024)
+    - Key: GNNs for stochastic financial network risk computation
+    - Novel PENN (Permutation Equivariant Neural Network) architecture
+    - Relevance: 7/10
+    - How to use: Model crypto ecosystem systemic risk
+
+================================================================================
+SECTION G: NEW PAPERS - MAMBA/SSM FOR FINANCE
+================================================================================
+
+[G1] MambaStock: Selective State Space Model for Stock Prediction
+    - Authors: Multiple (Chinese institutions)
+    - arXiv: 2402.18959 (February 2024)
+    - Key: First Mamba application to stock prediction
+    - Outperforms previous methods on multiple stocks
+    - No feature engineering needed
+    - Relevance: 8/10
+    - How to use: Reference implementation for adding Mamba to our ensemble
+
+[G2] CryptoMamba (see A5 above)
+
+[G3] SAMBA (see F2 above) - Graph + Mamba hybrid
+
+[G4] FinMamba (see F5 above) - Market-Aware Graph + Multi-Level Mamba
+
+================================================================================
+SECTION H: NEW PAPERS - BENCHMARKS, SURVEYS, AND TOOLS
+================================================================================
+
+[H1] FinTSB: Comprehensive and Practical Benchmark for Financial TSF
+    - Authors: Yifan Hu et al. (Tongji University)
+    - arXiv: 2502.18834 (February 2025)
+    - Key: Addresses Diversity Gap, Standardization Deficit, Real-World Mismatch
+    - Four movement pattern categories
+    - Models transaction fees and regulatory constraints
+    - Relevance: 8/10
+    - How to use: Evaluate our models on FinTSB for standardized comparison;
+      adopt their realistic trading simulation
+
+[H2] A Survey of Reasoning and Agentic Systems in Time Series with LLMs
+    - arXiv: 2509.11575 (September 2025)
+    - Key: Comprehensive survey of LLM reasoning for time series
+    - Relevance: 7/10 (survey, not method)
+    - How to use: Reference for identifying additional relevant papers
+
+[H3] The New Quant: Survey of LLMs in Financial Prediction and Trading
+    - arXiv: 2510.05533 (October 2025)
+    - Key: Comprehensive survey of LLM applications in quantitative finance
+    - Relevance: 7/10
+    - How to use: Identify additional techniques for integration
+
+[H4] Foundation Models for Time Series: A Survey
+    - arXiv: 2504.04011 (April 2025)
+    - Key: Comprehensive survey of all time series foundation models
+    - Relevance: 7/10
+    - How to use: Guide selection of foundation model backbone
+
+[H5] SMSFR-CNN: Multi-Scale CNN using OHLCT Images
+    - Authors: Zhiyuan Pei et al.
+    - arXiv: 2410.19291 (October 2024)
+    - Key: Convert OHLCT data to images for CNN processing
+    - 4,454 A-share stocks, 61.15% positive predictive value
+    - Relevance: 6/10
+    - How to use: Novel data representation approach for CNN models
+
+[H6] Modality-aware Transformer for Financial Time Series Forecasting
+    - Authors: Hajar Emami et al. (IBM Research)
+    - arXiv: 2310.01232 (October 2023)
+    - Venue: ICAIF 2024
+    - Key: Intra-modal, inter-modal, and target-modal attention
+    - Multimodal financial data integration
+    - Relevance: 8/10
+    - How to use: Adopt multi-modal attention architecture for combining
+      our price, sentiment, and on-chain data streams
+
+================================================================================
+SECTION I: TOP CONFERENCE PAPERS FROM ASIAN AUTHORS
+================================================================================
+
+[I1] DHMoE: Diffusion Generated Hierarchical Multi-Granular Expertise
+    - Authors: Weijun Chen, Yanze Wang et al.
+    - Venue: AAAI 2025
+    - Key: Diffusion Inverted Transformer root expert, multi-modality MoE
+    - Three-layer tree expert hierarchy
+    - Outperforms SOTA on 3 stock trading datasets
+    - Relevance: 9/10
+    - How to use: Adopt hierarchical MoE architecture with diffusion-based
+      expert allocation for our ensemble
+
+[I2] RSAP-DFM: Regime-Shifting Adaptive Posterior Dynamic Factor Model
+    - Authors: Quanzhou Xiang, Zhan Chen, Qi Sun, Rujun Jiang
+    - Venue: IJCAI 2024
+    - Key: First continuous regime-based dynamic factor model
+    - Dual regime shifting with adversarial posterior factors
+    - Multi-head attention for dynamic factor generation
+    - Relevance: 9/10
+    - How to use: Integrate regime detection into our factor model;
+      use dual regime shifting for crypto market states
+
+[I3] LLMoE: LLM-Based Routing in Mixture of Experts for Trading
+    - Authors: Kuan-Ming Liu, Ming-Chih Lo
+    - arXiv: 2501.09636 (January 2025)
+    - Venue: AAAI 2025 Workshop
+    - Key: LLM replaces neural network router in MoE
+    - Multimodal (text + numerical) expert selection
+    - Relevance: 9/10
+    - How to use: Use LLM to route between our 16 models based on
+      market context and news analysis
+
+[I4] DiffSTOCK: Probabilistic Relational Stock Predictions via Diffusion
+    - Authors: Divyanshu Daiya, Monika Yadav, Harshit Singh Rao
+    - arXiv: 2403.14063 (March 2024)
+    - Venue: ICASSP 2024 (Seoul)
+    - Key: DDPM for stock market prediction conditioned on relations
+    - Sharpe ratios of 7.92% (NASDAQ) and 6.18% (NYSE)
+    - Relevance: 7/10
+    - How to use: Apply diffusion-based probabilistic predictions to crypto
+
+[I5] X-Trend: Few-Shot Learning for Financial Time-Series
+    - Authors: Kieran Wood et al. (Oxford)
+    - arXiv: 2310.10500 (October 2023, published 2024)
+    - Key: Cross-attentive network for trend following
+    - 18.9% Sharpe improvement, 2x faster COVID recovery
+    - Zero-shot capable on unseen assets
+    - Relevance: 8/10
+    - How to use: Add few-shot adaptation for rapid adjustment
+      to new crypto market regimes
+
+[I6] Adapting to the Unknown: Robust Meta-Learning for Zero-Shot Financial TSF
+    - arXiv: 2504.09664 (April 2025)
+    - Key: Novel task construction for financial meta-learning
+    - Learned embeddings for effective task distribution
+    - Relevance: 8/10
+    - How to use: Apply meta-learning for generalization to new/unseen cryptos
+
+================================================================================
+SUMMARY: TOP 20 MOST ACTIONABLE PAPERS FOR OUR PLATFORM
+================================================================================
+
+Ranked by direct applicability to improving our crypto prediction system:
+
+ 1. ProbFM (C3) - Evidential regression for crypto uncertainty, VALIDATED
+ 2. CryptoPulse (B1) - Dual-prediction, macro+individual, directly crypto
+ 3. Meta-RL-Crypto (B2) - Self-improving crypto RL agent, multimodal
+ 4. MIGA (A1) - MoE for our 16-model ensemble routing
+ 5. LLMoE (I3) - LLM-based model routing for our ensemble
+ 6. FinMamba (F5) - Market-aware graph + Mamba, validated on both markets
+ 7. CryptoMamba (A5) - Mamba SSM specifically for Bitcoin prediction
+ 8. FinCast (A6) - 1B financial foundation model with PQ-loss
+ 9. DHMoE (I1) - Hierarchical diffusion MoE for multi-modal ensemble
+10. TradingAgents (A9) - Multi-agent architecture directly applicable
+11. FinCon (E2) - Manager-analyst hierarchy for our agents
+12. FLAG-Trader (E1) - LLM + RL unified trading architecture
+13. RSAP-DFM (I2) - Regime detection for crypto market states
+14. FinGPT (D2) - Open-source financial sentiment backbone
+15. FinDPO (D3) - DPO for sentiment with 67% annual return
+16. Kronos (C2) - K-line foundation model from 45 exchanges
+17. DELPHYNE (C1) - Bloomberg financial time series foundation model
+18. Re(Visiting) TSFMs (C4) - CRITICAL: domain-specific pre-training required
+19. THGNN (F1) - Dynamic heterogeneous graph for crypto relationships
+20. MarketGANs (A10) - Synthetic data augmentation for training
+
+================================================================================
+CORRECTIONS AND WARNINGS
+================================================================================
+
+1. DanQing (arXiv:2601.10305) is NOT a financial paper - it's a Chinese
+   Vision-Language dataset. REMOVE from financial paper list.
+
+2. DEJIMA (arXiv:2512.00773) is NOT a financial paper - it's a Japanese
+   Vision-Language dataset. REMOVE from financial paper list.
+
+3. Re(Visiting) TSFMs (C4) provides CRITICAL insight: zero-shot and
+   fine-tuned general TSFMs perform POORLY on financial data.
+   Must pre-train from scratch on financial/crypto data.
+
+4. Several papers list authors from Asian institutions but the research
+   is collaborative across continents. Pure "Asian-only" attribution
+   is often inaccurate in modern ML research.
+
+================================================================================
+TOTAL PAPERS CATALOGUED: 65+
+  - Known papers verified: 13 (2 removed as non-financial)
+  - Crypto-specific new: 10
+  - Time series foundation models: 10
+  - Financial NLP & sentiment: 8
+  - Multi-agent & RL trading: 11
+  - Graph neural networks for finance: 6
+  - Mamba/SSM for finance: 4 (some overlap)
+  - Benchmarks, surveys, tools: 6
+  - Top conference (Asian authors): 6
+================================================================================
+
+SOURCES (key URLs for verification):
+- https://arxiv.org/abs/2410.02241 (MIGA)
+- https://arxiv.org/abs/2409.16040 (Time-MoE)
+- https://arxiv.org/abs/2501.01010 (CryptoMamba)
+- https://arxiv.org/abs/2508.19609 (FinCast)
+- https://arxiv.org/abs/2502.00816 (Sundial)
+- https://arxiv.org/abs/2506.16123 (FinCoT)
+- https://arxiv.org/abs/2412.20138 (TradingAgents)
+- https://arxiv.org/abs/2601.17773 (MarketGANs)
+- https://arxiv.org/abs/2411.12748 (FinBERT-BiLSTM)
+- https://arxiv.org/abs/2602.03981 (DeXposure-FM)
+- https://arxiv.org/abs/2206.00648 (PreBit)
+- https://arxiv.org/abs/2603.04791 (Timer-S1)
+- https://arxiv.org/abs/2502.19349 (CryptoPulse)
+- https://arxiv.org/abs/2509.09751 (Meta-RL-Crypto)
+- https://arxiv.org/abs/2601.10591 (ProbFM)
+- https://arxiv.org/abs/2511.18578 (Re(Visiting) TSFMs)
+- https://arxiv.org/abs/2310.06625 (iTransformer)
+- https://arxiv.org/abs/2506.06288 (DELPHYNE)
+- https://arxiv.org/abs/2508.02739 (Kronos)
+- https://arxiv.org/abs/2509.24803 (TimeOmni-1)
+- https://arxiv.org/abs/2601.13653 (TimeART)
+- https://arxiv.org/abs/2503.16252 (Fin-R1)
+- https://arxiv.org/abs/2306.06031 (FinGPT)
+- https://arxiv.org/abs/2507.18417 (FinDPO)
+- https://arxiv.org/abs/2402.10986 (FinTral)
+- https://arxiv.org/abs/2408.11878 (Open-FinLLMs)
+- https://arxiv.org/abs/2502.11433 (FLAG-Trader)
+- https://arxiv.org/abs/2407.06567 (FinCon)
+- https://arxiv.org/abs/2510.14264 (AlphaQuanter)
+- https://arxiv.org/abs/2509.11420 (Trading-R1)
+- https://arxiv.org/abs/2512.23515 (Alpha-R1)
+- https://arxiv.org/abs/2502.16789 (AlphaAgent)
+- https://arxiv.org/abs/2502.07393 (FinRL-DeepSeek)
+- https://arxiv.org/abs/2411.11059 (News-Driven LLM RL)
+- https://arxiv.org/abs/2409.06289 (Automate Strategy)
+- https://arxiv.org/abs/2402.10803 (MARL Crypto)
+- https://arxiv.org/abs/2504.02281 (FinRL Contests)
+- https://arxiv.org/abs/2305.08740 (THGNN)
+- https://arxiv.org/abs/2410.03707 (SAMBA)
+- https://arxiv.org/abs/2401.01846 (DGDNN)
+- https://arxiv.org/abs/2502.06707 (FinMamba)
+- https://arxiv.org/abs/2410.07222 (Systemic Risk GNN)
+- https://arxiv.org/abs/2402.18959 (MambaStock)
+- https://arxiv.org/abs/2502.18834 (FinTSB)
+- https://arxiv.org/abs/2410.19291 (SMSFR-CNN)
+- https://arxiv.org/abs/2310.01232 (Modality-aware Transformer)
+- https://arxiv.org/abs/2403.14063 (DiffSTOCK)
+- https://arxiv.org/abs/2310.10500 (X-Trend)
+- https://arxiv.org/abs/2504.09664 (Meta-Learning Zero-Shot)
+- https://arxiv.org/abs/2506.22055 (LSTM+XGBoost Crypto)
+- https://arxiv.org/abs/2502.09079 (Crypto Unpredictability)
+- https://arxiv.org/abs/2508.15922 (Probabilistic Crypto Vol)
+- https://arxiv.org/abs/2501.10709 (Ensemble Crypto FinRL)
+- https://arxiv.org/abs/2508.18921 (Prob Distributions Returns)
+- https://arxiv.org/abs/2501.09636 (LLMoE)
+- https://ojs.aaai.org/index.php/AAAI/article/view/33250 (DHMoE)
+- https://www.ijcai.org/proceedings/2024/676 (RSAP-DFM)
+- https://ojs.aaai.org/index.php/AAAI/article/view/29305 (ECHO-GL)
+- https://arxiv.org/abs/2602.17634 (Reverso)
+- https://arxiv.org/abs/2512.07705 (Few-Shot LLM TS)
+- https://link.springer.com/article/10.1186/s40854-025-00768-x (EMGNN)

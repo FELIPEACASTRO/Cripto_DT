@@ -151,8 +151,19 @@ class Predictor:
         if df_features.empty:
             raise ValueError(f"Features vazias para {coin}")
 
+        # Align features: fill any columns the model expects but the data is missing
+        # (e.g. ema_200 needs 200+ days of data, but prediction only fetches 120 days)
+        missing_cols = [c for c in feature_columns if c not in df_features.columns]
+        if missing_cols:
+            logger.warning(
+                f"{coin}: {len(missing_cols)} features ausentes no prediction "
+                f"(preenchidas com 0): {missing_cols}"
+            )
+            for col in missing_cols:
+                df_features[col] = 0.0
+
         # Extrair e escalar features
-        X = df_features[feature_columns].values.astype(np.float32)
+        X = df_features[feature_columns].fillna(0).values.astype(np.float32)
         X_scaled = scaler.scaler.transform(X)
 
         # Previsoes de cada modelo
@@ -171,8 +182,27 @@ class Predictor:
 
         # Ensemble
         if "ensemble" in models and len(base_preds) > 0:
-            pred_array = np.array([list(base_preds.values())]).reshape(1, -1)
-            ensemble_pred, ensemble_conf = models["ensemble"].predict_with_confidence(
+            ens_model = models["ensemble"]
+            # Use the model_names stored during training to ensure correct
+            # column ordering.  Fall back to dict insertion order if the
+            # ensemble was trained before model_names were persisted.
+            if hasattr(ens_model, "model_names") and ens_model.model_names:
+                ordered_names = ens_model.model_names
+            else:
+                ordered_names = list(base_preds.keys())
+
+            # Build prediction array in the same column order as training
+            ordered_vals = []
+            for name in ordered_names:
+                if name in base_preds:
+                    ordered_vals.append(base_preds[name])
+                else:
+                    # Model missing at prediction time — use 0 (neutral)
+                    logger.warning(f"  Modelo {name} ausente na predicao, usando 0")
+                    ordered_vals.append(0.0)
+
+            pred_array = np.array([ordered_vals]).reshape(1, -1)
+            ensemble_pred, ensemble_conf = ens_model.predict_with_confidence(
                 pred_array
             )
             final_pred = float(ensemble_pred[0])

@@ -84,6 +84,11 @@ class FeatureConfig:
     use_nlp_sentiment: bool = True
     # Whale monitoring
     use_whale: bool = True
+    # Features da pesquisa Oriental (IA Leste Asiatico)
+    use_regional_markets: bool = True
+    use_chart_vision: bool = True
+    use_blockchain_nlp: bool = True
+    use_multilingual_sentiment: bool = True
     # Market Context Memory (aiagentstore.ai - Jina AI)
     embedding_backend: str = "auto"  # "auto", "jina", "sentence-transformers", "tfidf"
     embedding_model: str = "auto"  # "auto" = seleciona baseado no backend
@@ -239,6 +244,63 @@ class CNNLSTMConfig:
 
 
 @dataclass
+class MambaConfig:
+    d_model: int = 64
+    d_state: int = 16
+    n_layers: int = 4
+    dropout: float = 0.2
+    learning_rate: float = 1e-3
+    weight_decay: float = 1e-4
+    batch_size: int = 64
+    max_epochs: int = 100
+    early_stop_patience: int = 10
+    mc_dropout_samples: int = 30
+    scheduler_patience: int = 5
+    scheduler_factor: float = 0.5
+    grad_clip_max_norm: float = 1.0
+    loss_type: str = "madl"
+    madl_alpha: float = 2.0
+    d_conv: int = 4
+    expand_factor: int = 2
+    dt_rank: str = "auto"
+
+
+@dataclass
+class EvidentialConfig:
+    hidden_sizes: list[int] = field(default_factory=lambda: [256, 128])
+    dropout: float = 0.2
+    learning_rate: float = 1e-3
+    batch_size: int = 64
+    max_epochs: int = 150
+    early_stop_patience: int = 15
+    evidence_coeff: float = 0.1
+
+
+@dataclass
+class DualPredictionConfig:
+    hidden_sizes: list[int] = field(default_factory=lambda: [256, 128])
+    head_size: int = 64
+    dropout: float = 0.2
+    alpha: float = 0.6
+    learning_rate: float = 1e-3
+    batch_size: int = 64
+    max_epochs: int = 100
+    early_stop_patience: int = 10
+    classification_threshold: float = 0.6
+
+
+@dataclass
+class EvolutionaryEnsembleConfig:
+    population_size: int = 50
+    generations: int = 100
+    mutation_rate: float = 0.1
+    mutation_sigma: float = 0.1
+    crossover_rate: float = 0.8
+    elitism: int = 5
+    tournament_k: int = 3
+
+
+@dataclass
 class NewsScraperConfig:
     max_articles: int = 50
     cache_hours: int = 1
@@ -302,6 +364,11 @@ class TrainingConfig:
     use_cnn_lstm: bool = True
     use_tcn: bool = True
     use_bnn: bool = True
+    # Modelos da pesquisa Oriental (IA Leste Asiatico)
+    use_mamba: bool = True
+    use_evidential: bool = True
+    use_dual_prediction: bool = True
+    use_evolutionary_ensemble: bool = True
 
 
 @dataclass
@@ -322,6 +389,11 @@ class Config:
     tcn: TCNConfig = field(default_factory=TCNConfig)
     bnn: BNNConfig = field(default_factory=BNNConfig)
     cnn_lstm: CNNLSTMConfig = field(default_factory=CNNLSTMConfig)
+    # Modelos da pesquisa Oriental (IA Leste Asiatico)
+    mamba: MambaConfig = field(default_factory=MambaConfig)
+    evidential: EvidentialConfig = field(default_factory=EvidentialConfig)
+    dual_prediction: DualPredictionConfig = field(default_factory=DualPredictionConfig)
+    evolutionary_ensemble: EvolutionaryEnsembleConfig = field(default_factory=EvolutionaryEnsembleConfig)
     # Melhorias (aiagentstore.ai)
     news_scraper: NewsScraperConfig = field(default_factory=NewsScraperConfig)
     signal_generator: SignalGeneratorConfig = field(default_factory=SignalGeneratorConfig)

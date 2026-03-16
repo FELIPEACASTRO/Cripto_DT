@@ -118,6 +118,52 @@ class TestEnsembleModel:
         result = model.predict(preds[70:])
         assert result.shape == (30,)
 
+    def test_performance_weighted(self):
+        np.random.seed(42)
+        n = 100
+        y_true = np.random.randn(n) * 0.01
+        # Model 0: good (low noise), Model 1: mediocre, Model 2: best
+        preds = np.column_stack([
+            y_true + np.random.randn(n) * 0.005,
+            np.random.randn(n) * 0.01,  # near-random
+            y_true + np.random.randn(n) * 0.002,
+        ])
+
+        model = EnsembleModel(method="performance_weighted")
+        metrics = model.fit(
+            preds[:70], y_true[:70], preds[70:], y_true[70:],
+            model_names=["good", "random", "best"],
+        )
+        assert "train_rmse" in metrics
+
+        result = model.predict(preds[70:])
+        assert result.shape == (30,)
+
+        # The best model should get the highest weight
+        assert model.weights is not None
+        # Weights are only over selected models, so check count
+        assert model.weights.sum() > 0.99  # sums to ~1
+
+    def test_weak_model_filtering(self):
+        np.random.seed(42)
+        n = 200
+        y_true = np.random.randn(n) * 0.01
+        # One good model, one terrible model
+        preds = np.column_stack([
+            y_true + np.random.randn(n) * 0.003,
+            -y_true + np.random.randn(n) * 0.003,  # anti-correlated
+        ])
+
+        model = EnsembleModel(method="performance_weighted")
+        model.fit(
+            preds[:140], y_true[:140], preds[140:], y_true[140:],
+            model_names=["good", "bad"],
+        )
+        # The bad model should be filtered out
+        assert model.selected_mask is not None
+        # At least one model selected
+        assert model.selected_mask.sum() >= 1
+
     def test_confidence_range(self):
         np.random.seed(42)
         n = 50

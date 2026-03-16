@@ -238,6 +238,14 @@ class OnchainCollector:
                     flows_ts = flows.set_index("timestamp")
                     network_ts = network.set_index("timestamp")
 
+                    # Normalizar timezones para compatibilidade
+                    if df_ts.index.tz is not None:
+                        df_ts.index = df_ts.index.tz_localize(None)
+                    if flows_ts.index.tz is not None:
+                        flows_ts.index = flows_ts.index.tz_localize(None)
+                    if network_ts.index.tz is not None:
+                        network_ts.index = network_ts.index.tz_localize(None)
+
                     # Reindexar para match
                     flows_reindexed = flows_ts.reindex(
                         df_ts.index, method="nearest"
