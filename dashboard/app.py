@@ -114,17 +114,30 @@ def load_fold_metrics(coin: str) -> pd.DataFrame:
 
 @st.cache_data(ttl=600)
 def load_price_history(coin: str) -> pd.DataFrame:
-    """Carrega historico de precos diarios processados."""
-    path = _DATA_DIR / "processed" / f"{coin}_1d.csv"
-    if not path.exists():
-        path = _DATA_DIR / "raw" / f"{coin}_1d.csv"
-    if not path.exists():
-        return pd.DataFrame()
-    try:
-        df = pd.read_csv(path, parse_dates=["timestamp"])
-        return df
-    except Exception:
-        return pd.DataFrame()
+    """Carrega historico de precos diarios (Parquet ou CSV)."""
+    # Tentar Parquet primeiro (formato padrao do storage)
+    parquet_path = _DATA_DIR / "raw" / coin / "1d.parquet"
+    if parquet_path.exists():
+        try:
+            df = pd.read_parquet(parquet_path)
+            if "timestamp" in df.columns:
+                df["timestamp"] = pd.to_datetime(df["timestamp"])
+            return df
+        except Exception:
+            pass
+
+    # Fallback para CSV
+    for path in [
+        _DATA_DIR / "processed" / f"{coin}_1d.csv",
+        _DATA_DIR / "raw" / f"{coin}_1d.csv",
+    ]:
+        if path.exists():
+            try:
+                return pd.read_csv(path, parse_dates=["timestamp"])
+            except Exception:
+                pass
+
+    return pd.DataFrame()
 
 
 # ===================================================================

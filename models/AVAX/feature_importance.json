@@ -1,0 +1,16 @@
+{
+  "denoised_return": 0.5,
+  "rsi": 0.1,
+  "return_cum_3": 0.09,
+  "return_mean_5": 0.06,
+  "reg_india_wazirx_proxy": 0.055,
+  "obv": 0.05,
+  "return_cum_5": 0.04,
+  "upper_shadow": 0.035,
+  "sharpe_10": 0.02,
+  "return_lag_3": 0.015,
+  "price_position_5": 0.01,
+  "return_std_5": 0.01,
+  "realized_vol_5": 0.01,
+  "ema_cross_9_21": 0.005
+}

@@ -10,12 +10,16 @@ import numpy as np
 import pandas as pd
 
 # Tentar importar arch para modelos GARCH
-try:
-    from arch import arch_model
+import os
 
-    _HAS_ARCH = True
-except ImportError:
-    _HAS_ARCH = False
+_HAS_ARCH = False
+if not os.environ.get("CRIPTO_DT_NO_TORCH"):
+    try:
+        from arch import arch_model
+
+        _HAS_ARCH = True
+    except ImportError:
+        pass
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,6 @@ import logging
 
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import StandardScaler
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +81,7 @@ class FeatureScaler:
     """Scaler que fita apenas nos dados de treino (previne data leakage)."""
 
     def __init__(self):
+        from sklearn.preprocessing import StandardScaler
         self.scaler = StandardScaler()
         self._is_fitted = False
         self.feature_columns: list[str] = []

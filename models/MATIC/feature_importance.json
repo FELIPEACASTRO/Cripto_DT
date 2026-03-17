@@ -1,0 +1,19 @@
+{
+  "denoised_return": 0.31,
+  "anomaly_flag": 0.16,
+  "chart_resistance_level": 0.075,
+  "garman_klass_vol": 0.07,
+  "return_lag_10": 0.065,
+  "reg_day_of_week": 0.06,
+  "anomaly_return_zscore": 0.055,
+  "reg_india_wazirx_proxy": 0.04,
+  "reg_us_volume_ratio": 0.035,
+  "williams_r": 0.03,
+  "stoch_k": 0.03,
+  "reg_overnight_gap": 0.02,
+  "return_mean_20": 0.02,
+  "keltner_width": 0.01,
+  "noise_ratio": 0.01,
+  "nlp_finbert_positive": 0.005,
+  "vol_ratio": 0.005
+}

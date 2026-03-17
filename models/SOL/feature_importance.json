@@ -1,0 +1,18 @@
+{
+  "denoised_return": 0.5,
+  "nlp_finbert_sentiment": 0.125,
+  "return_cum_3": 0.12,
+  "keltner_width": 0.045,
+  "upper_shadow": 0.045,
+  "candle_body": 0.035,
+  "reg_overnight_gap": 0.03,
+  "return_lag_3": 0.02,
+  "adx_neg": 0.015,
+  "return_lag_2": 0.015,
+  "return_lag_1": 0.015,
+  "noise_ratio": 0.01,
+  "sharpe_10": 0.01,
+  "mfi": 0.005,
+  "chart_support_level": 0.005,
+  "return_lag_10": 0.005
+}

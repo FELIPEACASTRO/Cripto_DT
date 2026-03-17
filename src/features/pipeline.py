@@ -389,7 +389,7 @@ class FeaturePipeline:
         # 23. Multilingual Sentiment (CN, KR, JP, VN, ID, AR)
         if self._multilingual_sentiment is not None and coin:
             try:
-                df = self._multilingual_sentiment.add_sentiment_features(df, coin)
+                df = self._multilingual_sentiment.add_multilingual_features(df, coin)
             except Exception as e:
                 logger.warning(f"Multilingual sentiment falhou para {coin}: {e}")
 
@@ -502,5 +502,22 @@ class FeaturePipeline:
                             logger.warning(f"Cross-crypto falhou para {coin}: {e}")
             except Exception as e:
                 logger.warning(f"Cross-crypto features falhou: {e}")
+
+        # Alinhar colunas: garantir que todas as moedas tenham as mesmas features
+        if results:
+            all_feature_cols = set()
+            for coin, df in results.items():
+                all_feature_cols.update(self.get_feature_columns(df))
+
+            for coin in results:
+                missing = all_feature_cols - set(results[coin].columns)
+                if missing:
+                    logger.info(f"  {coin}: preenchendo {len(missing)} features ausentes com 0")
+                    for col in missing:
+                        results[coin][col] = 0.0
+
+            # Atualizar feature_columns com a uniao
+            self._feature_columns = sorted(all_feature_cols)
+            logger.info(f"Feature columns finais: {len(self._feature_columns)} features (alinhadas)")
 
         return results

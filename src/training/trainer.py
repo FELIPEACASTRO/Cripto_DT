@@ -717,4 +717,21 @@ class Trainer:
             with open(coin_dir / "feature_columns.json", "w") as f:
                 json.dump(result["feature_columns"], f)
 
+            # Salvar metricas para dashboard
+            if result.get("avg_metrics"):
+                with open(coin_dir / "metrics.json", "w") as f:
+                    json.dump(result["avg_metrics"], f, indent=2)
+
+            if result.get("fold_metrics"):
+                with open(coin_dir / "fold_metrics.json", "w") as f:
+                    json.dump(result["fold_metrics"], f, indent=2)
+
+            # Feature importance (XGBoost)
+            xgb_model = result["models"].get("xgb_reg")
+            if xgb_model and hasattr(xgb_model, "get_feature_importance"):
+                importance = xgb_model.get_feature_importance()
+                if importance:
+                    with open(coin_dir / "feature_importance.json", "w") as f:
+                        json.dump(importance, f, indent=2)
+
             logger.info(f"Modelos salvos para {coin} em {coin_dir}")

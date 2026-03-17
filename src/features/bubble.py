@@ -5,10 +5,18 @@ usando testes ADF recursivos (rolling).
 """
 
 import logging
+import os
 
 import numpy as np
 import pandas as pd
-from statsmodels.tsa.stattools import adfuller
+
+_HAS_STATSMODELS = False
+if not os.environ.get("CRIPTO_DT_NO_TORCH"):
+    try:
+        from statsmodels.tsa.stattools import adfuller
+        _HAS_STATSMODELS = True
+    except ImportError:
+        pass
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +62,13 @@ class BubbleDetector:
         df["bubble_duration"] = 0
         df["bubble_intensity"] = 0.0
         df["log_price_deviation"] = np.nan
+
+        # Verificar se statsmodels esta disponivel
+        if not _HAS_STATSMODELS:
+            logger.info("statsmodels nao disponivel. Retornando features de bolha com zeros.")
+            df["log_price_deviation"] = 0.0
+            df["bubble_adf_stat"] = 0.0
+            return df
 
         # Verificar dados minimos
         if n < self.min_window:
