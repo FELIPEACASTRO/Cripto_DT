@@ -273,6 +273,94 @@ class CrossCryptoFeatures:
 
         return df
 
+    # --- Sector definitions for sector momentum ---
+    SECTORS = {
+        "L1": ["BTC", "ETH", "SOL", "DOT", "ADA", "AVAX"],
+        "DeFi": ["ETH", "SOL", "AVAX"],
+        "Meme": ["DOGE"],
+        "Exchange": ["BNB"],
+        "Payments": ["XRP"],
+        "L2": ["MATIC"],
+    }
+
+    def add_sector_features(
+        self, coin_data: dict[str, pd.DataFrame], target_coin: str, df: pd.DataFrame
+    ) -> pd.DataFrame:
+        """Adiciona features de setor (momentum medio do setor, spread vs setor).
+
+        Args:
+            coin_data: Dicionario {nome_moeda: DataFrame} com dados de todas moedas
+            target_coin: Nome da moeda alvo
+            df: DataFrame da moeda alvo (ja com log_return)
+
+        Returns:
+            DataFrame com features de setor adicionadas
+        """
+        target_returns = self._get_returns(df, target_coin)
+        if target_returns is None:
+            return df
+
+        for sector_name, members in self.SECTORS.items():
+            # Coletar retornos das moedas do setor (excluindo target)
+            sector_returns = []
+            for coin in members:
+                if coin == target_coin or coin not in coin_data:
+                    continue
+                other_df = coin_data[coin]
+                ret = self._get_returns(other_df, coin)
+                if ret is not None:
+                    # Alinhar pelo comprimento
+                    min_len = min(len(ret), len(df))
+                    sector_returns.append(ret.iloc[:min_len].reset_index(drop=True).values)
+
+            if not sector_returns:
+                df[f"sector_{sector_name}_momentum"] = 0.0
+                df[f"sector_{sector_name}_spread"] = 0.0
+                continue
+
+            # Calcular momentum medio do setor
+            max_len = len(df)
+            padded = []
+            for sr in sector_returns:
+                if len(sr) < max_len:
+                    sr = np.concatenate([np.zeros(max_len - len(sr)), sr])
+                elif len(sr) > max_len:
+                    sr = sr[:max_len]
+                padded.append(sr)
+
+            sector_mean = np.mean(padded, axis=0)
+            df[f"sector_{sector_name}_momentum"] = sector_mean
+
+            # Spread: retorno da moeda alvo vs setor
+            target_vals = target_returns.fillna(0).values
+            if len(target_vals) == len(sector_mean):
+                df[f"sector_{sector_name}_spread"] = target_vals - sector_mean
+            else:
+                df[f"sector_{sector_name}_spread"] = 0.0
+
+            # Rolling sector momentum (5d e 10d)
+            for window in [5, 10]:
+                df[f"sector_{sector_name}_mom_{window}d"] = (
+                    pd.Series(sector_mean).rolling(window).mean().values
+                )
+
+        # Lead-lag score simplificado: correlacao cruzada defasada
+        if "BTC" in coin_data and target_coin != "BTC":
+            btc_ret = self._get_returns(coin_data["BTC"], "BTC")
+            if btc_ret is not None and target_returns is not None:
+                min_len = min(len(btc_ret), len(target_returns))
+                btc_v = btc_ret.iloc[:min_len].fillna(0).values
+                tgt_v = target_returns.iloc[:min_len].fillna(0).values
+
+                # Correlacao BTC(t-1) vs target(t) — BTC lidera?
+                if len(btc_v) > 2:
+                    lead_lag = np.corrcoef(btc_v[:-1], tgt_v[1:])[0, 1]
+                    df["btc_lead_lag_score"] = lead_lag if np.isfinite(lead_lag) else 0.0
+                else:
+                    df["btc_lead_lag_score"] = 0.0
+
+        return df
+
     def get_feature_names(self, other_coins: list[str] | None = None) -> list[str]:
         """Retorna nomes das features geradas.
 

@@ -195,6 +195,34 @@ class FeaturePipeline:
             if Cls:
                 self._multilingual_sentiment = Cls()
 
+        # --- Entropy Filter (noise reduction) ---
+        self._entropy_filter = None
+        if config.features.use_entropy_filter:
+            Cls = _safe_import("src.features.entropy_filter", "EntropyFilter")
+            if Cls:
+                self._entropy_filter = Cls()
+
+        # --- Microstructure Features (Hurst, VPIN, Amihud) ---
+        self._microstructure = None
+        if config.features.use_microstructure:
+            Cls = _safe_import("src.features.microstructure", "MicrostructureFeatures")
+            if Cls:
+                self._microstructure = Cls()
+
+        # --- Visual Pattern Analyzer (GAF, candlestick, S/R, volume profile) ---
+        self._visual_patterns = None
+        if config.features.use_visual_patterns:
+            Cls = _safe_import("src.features.visual_pattern_analyzer", "VisualPatternAnalyzer")
+            if Cls:
+                self._visual_patterns = Cls()
+
+        # --- Funding Rate & OI Proxy ---
+        self._funding_oi = None
+        if config.features.use_funding_oi:
+            Cls = _safe_import("src.features.funding_oi", "FundingOIFeatures")
+            if Cls:
+                self._funding_oi = Cls()
+
         # --- Timeframe Fusion (multi-timeframe) ---
         self._timeframe_fusion = None
         if config.features.use_multi_timeframe:
@@ -407,6 +435,34 @@ class FeaturePipeline:
             except Exception as e:
                 logger.warning(f"Regional intelligence falhou: {e}")
 
+        # 25.5. Entropy Filter (noise reduction, predictability regime)
+        if self._entropy_filter is not None:
+            try:
+                df = self._entropy_filter.transform(df)
+            except Exception as e:
+                logger.warning(f"Entropy filter falhou: {e}")
+
+        # 25.6. Microstructure Features (Hurst, VPIN, Amihud, Kyle, fractal)
+        if self._microstructure is not None:
+            try:
+                df = self._microstructure.transform(df)
+            except Exception as e:
+                logger.warning(f"Microstructure features falhou: {e}")
+
+        # 25.7. Visual Pattern Analyzer (GAF, candlestick, S/R, volume profile)
+        if self._visual_patterns is not None:
+            try:
+                df = self._visual_patterns.transform(df)
+            except Exception as e:
+                logger.warning(f"Visual pattern analyzer falhou: {e}")
+
+        # 25.8. Funding Rate & OI Proxy
+        if self._funding_oi is not None:
+            try:
+                df = self._funding_oi.transform(df)
+            except Exception as e:
+                logger.warning(f"Funding/OI features falhou: {e}")
+
         # 26. FinBERT + Twitter-RoBERTa Sentiment (Phase 6 NLP)
         if self._finbert_sentiment is not None:
             try:
@@ -498,10 +554,27 @@ class FeaturePipeline:
                     for coin in list(results.keys()):
                         try:
                             results[coin] = cross.transform(results, coin)
+                            # Sector momentum features
+                            results[coin] = cross.add_sector_features(
+                                results, coin, results[coin]
+                            )
                         except Exception as e:
                             logger.warning(f"Cross-crypto falhou para {coin}: {e}")
             except Exception as e:
                 logger.warning(f"Cross-crypto features falhou: {e}")
+
+        # Transfer Entropy features (causalidade informacional entre moedas)
+        try:
+            TECls = _safe_import("src.features.transfer_entropy", "TransferEntropyFeatures")
+            if TECls:
+                te = TECls()
+                for coin in list(results.keys()):
+                    try:
+                        results[coin] = te.transform(results, coin)
+                    except Exception as e:
+                        logger.warning(f"Transfer entropy falhou para {coin}: {e}")
+        except Exception as e:
+            logger.warning(f"Transfer entropy features falhou: {e}")
 
         # Alinhar colunas: garantir que todas as moedas tenham as mesmas features
         if results:

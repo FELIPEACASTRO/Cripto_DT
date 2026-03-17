@@ -99,6 +99,14 @@ class FeatureConfig:
     embedding_backend: str = "auto"  # "auto", "jina", "sentence-transformers", "tfidf"
     embedding_model: str = "auto"  # "auto" = seleciona baseado no backend
     max_context_events: int = 10000
+    # Entropy filter (noise reduction)
+    use_entropy_filter: bool = True
+    # Microstructure features (Hurst, fractal, VPIN, Amihud)
+    use_microstructure: bool = True
+    # Visual Pattern Analyzer (GAF, candlestick, S/R, volume profile)
+    use_visual_patterns: bool = True
+    # Funding Rate & Open Interest proxy
+    use_funding_oi: bool = True
     # Feature selection
     feature_selection_method: str = "boruta"  # "boruta", "l1", "mutual_info", "none"
 
