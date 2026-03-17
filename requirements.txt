@@ -1,0 +1,77 @@
+# Data
+pandas>=2.0
+numpy>=1.24
+pyarrow>=12.0
+ccxt>=4.0
+requests>=2.31
+
+# Feature Engineering
+ta>=0.11.0
+PyWavelets>=1.4
+EMD-signal>=1.5  # CEEMDAN/EEMD/EMD decomposition
+arch>=7.0  # GARCH volatility models
+statsmodels>=0.14  # ADF test, econometrics
+
+# Machine Learning
+scikit-learn>=1.3
+xgboost>=2.0
+lightgbm>=4.0
+hmmlearn>=0.3  # Regime detection (HMM)
+
+# Feature Selection
+boruta>=0.3  # Boruta feature selection
+
+# Deep Learning
+torch>=2.0
+
+# Explainability
+shap>=0.43
+
+# NLP / Sentiment (opcional)
+sentence-transformers>=2.2
+transformers>=4.30  # Jina AI embeddings backend (opcional)
+
+# Macro Data
+yfinance>=0.2
+
+# Hyperparameter Tuning
+optuna>=3.0
+
+# Reinforcement Learning
+gymnasium>=0.29
+stable-baselines3>=2.0
+
+# Visualization
+matplotlib>=3.7
+plotly>=5.15
+
+# Dashboard
+streamlit>=1.30
+
+# API REST
+fastapi>=0.110
+uvicorn[standard]>=0.27
+
+# News Scraping
+feedparser>=6.0  # RSS feed parsing
+aiohttp>=3.9  # Async HTTP para advanced crawler (opcional)
+
+# Chart Vision (VISTA-inspired)
+Pillow>=10.0  # Geracao de imagens de candlestick
+
+# OCR (opcional — DeepSeek-OCR-2 + PaddleOCR fallback)
+# paddleocr>=2.7  # Descomente se precisar de OCR local
+# paddlepaddle>=2.5  # Backend do PaddleOCR
+
+# Multilingual NLP (opcional — tokenizadores por idioma)
+# fugashi>=1.3  # Tokenizer japones (MeCab)
+# ipadic>=1.0  # Dicionario MeCab
+# jieba>=0.42  # Tokenizer chines
+
+# Utilities
+tqdm>=4.65
+joblib>=1.3
+python-dateutil>=2.8
+
+# Testing
+pytest>=7.0

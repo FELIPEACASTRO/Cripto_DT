@@ -1,0 +1,14 @@
+{
+  "denoised_return": 0.52,
+  "return_cum_3": 0.13,
+  "noise_ratio": 0.065,
+  "return_cum_10": 0.06,
+  "chart_triangle": 0.045,
+  "sharpe_20": 0.045,
+  "return_mean_10": 0.045,
+  "return_cum_5": 0.035,
+  "price_position_10": 0.015,
+  "return_mean_5": 0.015,
+  "nlp_forward_looking_score": 0.015,
+  "obv": 0.01
+}

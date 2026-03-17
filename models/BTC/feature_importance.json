@@ -1,0 +1,11 @@
+{
+  "denoised_return": 0.52,
+  "return_cum_3": 0.145,
+  "return_mean_5": 0.075,
+  "price_position_20": 0.07,
+  "return_cum_5": 0.06,
+  "price_position_5": 0.045,
+  "upper_shadow": 0.035,
+  "reg_overnight_gap": 0.025,
+  "anomaly_flag": 0.025
+}
